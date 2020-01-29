@@ -105,8 +105,6 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     np.savetxt((file_out + "/patstest.txt"),pats, delimiter = ",", fmt = "%s")
     set_up.to_csv((file_out + "/setup.csv"))
 
-# todo read in files
-
 def _read_files(folder_name, file_list="default", out_file = os.getcwd()):
     """
     Reads files gets all the cases
@@ -152,13 +150,12 @@ def _read_files(folder_name, file_list="default", out_file = os.getcwd()):
 
 
 # todo export data set
-def full_out(disease, df_list, except_list, write_out = True, *args, **kwargs):
+def full_out(disease, df_list, write_out = False, *args, **kwargs):
     """
     turns the list of data frames into one nice easy to manage data frame
     :param disease: name of disease being looked at
     :param df_list: list of data frames from read files
-    :param except_list: list of vars to count as exceptions
-    :param write_out: whether to write out the data set or not
+    :param write_out: whether to write out the data set, set to false or string of folder to write out
     :param args:
     :param kwargs:
     :return: 1 data frame
@@ -313,8 +310,13 @@ def full_out(disease, df_list, except_list, write_out = True, *args, **kwargs):
                     "History of cardiac arrest (situation)",
                     "Stroke",
                     "Atrial Fibrillation"]
-    if except_list != None:
-        disease_list = cvd_list + except_list
+    excepts_dict = {'copd':['Anemia (disorder)'],
+                    'dementia':['Pneumonia'],
+                    'hypothyrodism':['Anemia']}
+
+
+    if disease in excepts_dict.keys():
+        disease_list = cvd_list + excepts_dict[disease]
     else:
         disease_list = cvd_list
 
@@ -326,9 +328,16 @@ def full_out(disease, df_list, except_list, write_out = True, *args, **kwargs):
         for j in ['before', 'after']:
             x = _var_counter(i, onset_df, timing = j)
             df = pd.merge(df, x, how = 'left', on = 'PATIENT')
-
+    if write_out != False
+        df.to_csv(write_out + disease + 'clean.csv')
     return (df)
 
-# todo define excepts
+def remove_files(dir, file_list):
+    """
+    removes the raw synthea data from the folder
+    :param dir: directory of which to remove stuff
+    :param file_list:
+    :return: nothing
+    """
+    list(map(lambda x: os.remove(dir + x), file_list))
 
-# todo delete og data
