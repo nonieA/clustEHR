@@ -1,0 +1,4 @@
+exporter.csv.export = true
+exporter.csv.append_mode = true
+generate.log_patients.detail = none
+exporter.fhir.export = false 
