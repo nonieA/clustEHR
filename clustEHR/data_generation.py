@@ -20,7 +20,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     :return: creates output in folder (doesn't actually return anything to python) also creates a config file
     showing all the parameters needed to make this so you can save it for later
     """
-
+    # todo write a verbose argument
     # number of patients
     npats = 0
 
@@ -42,6 +42,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     # Defining output directory
 
     file_out = (out_folder+
+                '/' +
                 re.sub('\*',"",disease, count = 0) +
                 "_" +
                 str(dt.datetime.now().date()) +
@@ -67,7 +68,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
 
         run_thing = subprocess.run(synth_cmd , stdout = subprocess.PIPE)
         if run_thing.stdout.decode('utf-8').find('[0 loaded]') > -1:
-            raise ValueError('so the disease imput doesnt link to a module')
+            raise ValueError('so the disease input doesnt link to a module')
 
 
         pats = pd.read_csv((file_out + "/csv/conditions.csv"), usecols=['PATIENT','DESCRIPTION'])
@@ -127,7 +128,7 @@ def _read_files(folder_name, file_list="default", out_file = os.getcwd()):
     full_file_name = out_file + folder_name + "/csv/"
     get_names = lambda x: re.sub("\.csv", "", x)
     names_list = list(map(get_names, file_list))
-    patients = pd.read_csv("./output/" + folder_name + "/patstest.txt", header = None, names = ["PATIENT"])
+    patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header = None, names = ["PATIENT"])
     df_list = dict.fromkeys(names_list, 0)
     disease = re.sub("_.*", "", folder_name)
 
@@ -328,16 +329,17 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
         for j in ['before', 'after']:
             x = _var_counter(i, onset_df, timing = j)
             df = pd.merge(df, x, how = 'left', on = 'PATIENT')
-    if write_out != False
+    if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
     return (df)
 
-def remove_files(dir, file_list):
+def _remove_files(path):
     """
     removes the raw synthea data from the folder
-    :param dir: directory of which to remove stuff
-    :param file_list:
+    :param path: directory of which to remove stuff
     :return: nothing
     """
-    list(map(lambda x: os.remove(dir + x), file_list))
+    [os.remove(path + i + j) for i in ['/csv/','/fhir/'] for j in os.listdir(path + i)]
+    [os.rmdir(path + i) for i in ['/csv/','/fhir/']]
+
 
