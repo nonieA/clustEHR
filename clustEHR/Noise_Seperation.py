@@ -26,3 +26,5 @@ def var_type(df):
             return('cat')
     var_df = pd.DataFrame({'var':df.columns.tolist(), 'type': [var_bin(df[i]) for i in df.columns]})
     return(var_df)
+
+def

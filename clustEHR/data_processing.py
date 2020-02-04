@@ -4,19 +4,10 @@ Takes multiple disease DFs and processes them to make one clusterable dataset
 
 import pandas as pd
 import os
-import math
 import numpy as np
-import re
-from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import linear_model
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
-from sklearn.decomposition import PCA
-from matplotlib import pyplot
-from sklearn.metrics import roc_auc_score
+
 
 def _combine_disease_dfs(disease_list):
     """
