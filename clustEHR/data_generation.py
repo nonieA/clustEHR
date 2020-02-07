@@ -339,7 +339,8 @@ def _remove_files(path):
     :param path: directory of which to remove stuff
     :return: nothing
     """
-    [os.remove(path + i + j) for i in ['/csv/','/fhir/'] for j in os.listdir(path + i)]
-    [os.rmdir(path + i) for i in ['/csv/','/fhir/']]
+    folders = [i for i in os.listdir(path) if '.' not in i]
+    [os.remove(path + i + '/' + j) for i in folders for j in os.listdir(path + i)]
+    [os.rmdir(path + i) for i in folders]
 
 

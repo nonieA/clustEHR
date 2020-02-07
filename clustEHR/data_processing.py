@@ -5,6 +5,7 @@ Takes multiple disease DFs and processes them to make one clusterable dataset
 import pandas as pd
 import os
 import numpy as np
+from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import OneHotEncoder
 
@@ -29,7 +30,7 @@ def _combine_disease_dfs(disease_list):
 
     df_disease_list = [list_checker(i) for i in disease_list]
     df = pd.concat(df_disease_list, sort=False)
-    df = df.replace([np.inf, -np.inf], np.nan).drop(df.columns[0], axis = 1)
+    df = df.replace([np.inf, -np.inf], np.nan)
 
     concat_dict = {x.DISEASE[1]:x.iloc[:,get_index(x):].columns.tolist() for x in df_disease_list}
     unique_drug_list = [j for i in concat_dict.values() for j in i]
