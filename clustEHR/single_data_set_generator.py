@@ -8,8 +8,8 @@ import data_processing as dp
 import noise_seperation as ns
 import datetime as dt
 
-def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n
-                  seperation = None, out_file = os.getwd(), export = False, verbose = True ):
+def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
+                  seperation = None, priority = var_n , out_file = os.getwd(), export = False, verbose = True ):
     """
     :param n: number of patients, ints or list of ints where the lenght is equal to number of clusters
     :param seed: int, random seed
@@ -92,8 +92,17 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n
         var_counter = pd.DataFrame(var_selector.groupby('noise').type.value_counts())
         var_counter['ratio'] = [i for lists in noise_var_ratio for i in lists]
         var_counter['div'] = round(var_counter.type/var_counter.ratio)
+
         if var_n == None:
-            var_counter['fin_row_counts'] =  var_counter.ratio * min(var_counter['div'])
+            var_counter['fin_row_counts'] = var_counter.ratio * min(var_counter['div'])
+        elif priority == 'var_n':
+            var_counter['fin_row_counts'] = round(var_counter.ratio * (var_n/sum(var_counter.ratio)))
+            if any(var_counter.fin_row_counts < var_counter.type):
+                var_counter['dif'] = var_counter.fin_row_counts - var_counter.type
+
+
+
+
 
 
 
