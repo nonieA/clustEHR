@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import OneHotEncoder
-
+import random
 
 def _combine_disease_dfs(disease_list):
     """
@@ -133,3 +133,78 @@ def data_clean(df,
     df_X = pd.concat([df_X, hot], axis=1).select_dtypes(include=['float64'])
 
     return(df_X, df_y, df_out)
+
+def var_count_sorter(var_count_df):
+    dif_indx = var_count_df.loc[var_count_df['dif'] < 0,:].index.tolist()[0]
+    var_count_df['dif'] = var_count_df.type - var_count_df.fin_row_counts
+    var_count_df.index.rename(['noise','var'], inplace = True)
+    var_count_df.reset_index(inplace = True)
+    make_up = abs(var_count_df.loc[(var_count_df['noise'] == dif_indx[0]) & (var_count_df['var'] == dif_indx[1])]['dif'].item())
+    noise_df = var_count_df[(var_count_df['noise'] == dif_indx[0]) & ~(var_count_df['var'] == dif_indx[1])]
+    var_df = var_count_df[~(var_count_df['noise'] == dif_indx[0]) & (var_count_df['var'] == dif_indx[1])]
+    else_df = var_count_df[~(var_count_df['noise'] == dif_indx[0]) & ~(var_count_df['var'] == dif_indx[1])]
+    df_list = [noise_df,var_df,else_df]
+    for i in range(len(df_list)):
+        for j in range(len(df_list[i])):
+            add = round(make_up/(len(df_list[i]) - j))
+            if df_list[i].iloc[j]['dif'] >= add:
+                df_list[i].iat[j,5] = df_list[i].iloc[j]['fin_row_counts'] + add
+                make_up = make_up - add
+            else:
+                num = (0 if df_list[i].iloc[j]['dif'] <= 0 else df_list[i].iloc[j]['dif'])
+                df_list[i].iat[j,5] = df_list[i].iloc[j]['fin_row_counts'] + num
+                make_up = make_up - num
+            if make_up <= 0:
+                break
+    df_list = df_list + [var_count_df[(var_count_df['noise'] == dif_indx[0]) & (var_count_df['var'] == dif_indx[1])]]
+    out_df = pd.concat(df_list, sort= False )
+    out_df.iat[-1,5] = out_df.iloc[-1]['fin_row_counts'] + out_df.iloc[-1]['dif']
+    return(out_df)
+
+
+def var_ratio_returner(importance,var_n, noise_var_ratio, priority):
+    var_counter = pd.DataFrame(importance.groupby('noise').type.value_counts())
+    var_counter['ratio'] = [i for lists in noise_var_ratio for i in lists]
+    var_counter['div'] = round(var_counter.type / var_counter.ratio)
+
+    if var_n == None:
+        var_counter['fin_row_counts'] = var_counter.ratio * min(var_counter['div'])
+        var_counter.index.rename(['noise', 'var'], inplace=True)
+        var_counter.reset_index(inplace=True)
+        var_counter_fin = var_counter
+    elif priority == 'var_n':
+        if var_n > len(importance):
+            warnings.warn(
+                'There are not enough variables in the data to return the required number of variables (sorry)')
+        var_counter['fin_row_counts'] = round(var_counter.ratio * (var_n / sum(var_counter.ratio)))
+        if any(var_counter.fin_row_counts < var_counter.type):
+            var_counter['dif'] =  var_counter.type - var_counter.fin_row_counts
+            var_counter_fin = var_count_sorter(var_counter)
+            warnings.warn('variable ratio could not be maintained while achieving the correct number of vars')
+    else:
+        var_counter['fin_row_counts'] = round(var_counter.ratio * (var_n / sum(var_counter.ratio)))
+        var_counter['fin_row_counts'] = list(
+            map(
+                lambda x: var_counter.iloc[x]['fin_row_counts']if var_counter.iloc[x]['fin_row_counts'] < var_counter.iloc[x]['type'] else var_counter.iloc[x]['type'],
+            range(len(var_counter))))
+        var_counter.index.rename(['noise', 'var'], inplace=True)
+        var_counter.reset_index(inplace=True)
+        var_counter_fin = var_counter
+    return(var_counter_fin)
+
+def var_getter(var_counter_fin,importance):
+    def list_returner(importance,noise,var,n):
+        df = importance[(importance['noise'] == noise) & (importance['type'] == var)]
+        cols = random.sample(df['vars'].tolist(), k = int(n))
+        return(cols)
+
+    var_list = [list_returner(
+        importance,
+        var_counter_fin.loc[i,'noise'],var_counter_fin.loc[i,'var'],var_counter_fin.loc[i,'fin_row_counts'])
+        for i in range(len(var_counter_fin))]
+    var_list = [j for i in var_list for j in i]
+    return(var_list)
+
+
+
+

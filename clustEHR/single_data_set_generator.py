@@ -7,7 +7,7 @@ import data_generation as dg
 import data_processing as dp
 import noise_seperation as ns
 import datetime as dt
-
+import warnings
 def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                   seperation = None, priority = var_n , out_file = os.getwd(), export = False, verbose = True ):
     """
@@ -47,7 +47,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                    'urinary_tract_infections*']
 
     # sorting life out if statements
-    if isinstance(clusters, int) or (isinstance(clusters, list) and isinstance(clusters[0], str)):
+    if not isinstance(clusters, int) or (isinstance(clusters, list) and isinstance(clusters[0], str)):
         raise ValueError('clusters needs to be either an int representing the number of clusters or a list of diseases')
     elif isinstance(clusters, int) and clusters <= len(module_list):
         clusters = random.sample(module_list, clusters)
@@ -77,7 +77,8 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                     )
 
         file_list = dg._read_files(file_name, out_file= out_folder)
-        df = dg.full_out(disease, df_list = file_list, write_out = (out_folder + file_name + '/'))
+        disease_cut = re.sub('\*','',disease)
+        df = dg.full_out(disease_cut, df_list = file_list, write_out = (out_folder + file_name + '/'))
         dg._remove_files(out_file + file_name + '/')
         return(df)
 
@@ -89,16 +90,15 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
 
     if vars == None:
         var_selector = pd.merge(ns.rf_noise(df_X, df_y),ns.var_type(df_X), how = 'left', on = 'vars')
-        var_counter = pd.DataFrame(var_selector.groupby('noise').type.value_counts())
-        var_counter['ratio'] = [i for lists in noise_var_ratio for i in lists]
-        var_counter['div'] = round(var_counter.type/var_counter.ratio)
+        var_count = dp.var_ratio_returner(var_selector,var_n = var_n, noise_var_ratio=noise_var_ratio, priority = priority)
+        vars = dp.var_getter(var_count,var_selector)
 
-        if var_n == None:
-            var_counter['fin_row_counts'] = var_counter.ratio * min(var_counter['div'])
-        elif priority == 'var_n':
-            var_counter['fin_row_counts'] = round(var_counter.ratio * (var_n/sum(var_counter.ratio)))
-            if any(var_counter.fin_row_counts < var_counter.type):
-                var_counter['dif'] = var_counter.fin_row_counts - var_counter.type
+    df_fin = df_X[vars]
+
+
+
+
+
 
 
 
