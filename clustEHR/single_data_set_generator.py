@@ -64,7 +64,8 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
 
     if noise_var_ratio == None:
         noise_var_ratio = [[3,3],[1,1]]
-
+    if out_file[-1] != '\\' or out_file[-1] != '/'
+        out_file = out_file + '\\'
     # generate synthea data
 
     def one_dis(n, disease, seed, out_folder):
@@ -89,7 +90,11 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
     df_X, df_y, outcomes = dp.data_clean(comb_df, comb = excepts)
 
     if vars == None:
-        var_selector = pd.merge(ns.rf_noise(df_X, df_y),ns.var_type(df_X), how = 'left', on = 'vars')
+        if len(noise_var_ratio[0]) == 3:
+            og_df = comb_df
+        else:
+            og_df = None
+        var_selector = pd.merge(ns.rf_noise(df_X, df_y, og_df = og_df),ns.var_type(df_X,og_df), how = 'left', on = 'vars')
         var_count = dp.var_ratio_returner(var_selector,var_n = var_n, noise_var_ratio=noise_var_ratio, priority = priority)
         vars = dp.var_getter(var_count,var_selector)
 

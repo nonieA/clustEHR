@@ -9,6 +9,7 @@ from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.preprocessing import OneHotEncoder
 import random
+import warnings
 
 def _combine_disease_dfs(disease_list):
     """

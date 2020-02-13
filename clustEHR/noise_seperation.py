@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import statistics
+import re
 
 def rf_noise(df_X,df_y,params = None, og_df = None):
 
@@ -16,7 +17,7 @@ def rf_noise(df_X,df_y,params = None, og_df = None):
         return(all(elem in list_1 for elem in list_2))
 
 
-    def de_hot_encode(importance, og_df):
+    def de_hot_encode(importance, og_df = None):
         cat_df = og_df.select_dtypes(include = 'object')
         cat_dict = {i:cat_df[i].unique() for i in cat_df.columns.tolist() if len(cat_df[i].unique()) < len(cat_df[i])}
         x_list = set([re.sub('_.*','',i) for i in importance.vars if re.match('x\d_',i) ])
@@ -32,7 +33,7 @@ def rf_noise(df_X,df_y,params = None, og_df = None):
         return(importance)
 
     importance = rfor_imp(df_X,df_y)
-    if og_df != None:
+    if og_df is not None:
         importance = de_hot_encode(importance,og_df)
 
     if params == None:
@@ -47,7 +48,7 @@ def rf_noise(df_X,df_y,params = None, og_df = None):
 
 def var_type(*args):
     def var_bin(series):
-        if series.unique().tolist() == [0,1]:
+        if series.unique().tolist() == [0,1] or len(series.unique()) == 2:
             return('bin')
         elif isinstance(series[1],float) or isinstance(series[1],int):
             return('cont')
