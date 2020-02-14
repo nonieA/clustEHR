@@ -136,10 +136,14 @@ def data_clean(df,
     return(df_X, df_y, df_out)
 
 def var_count_sorter(var_count_df):
-    dif_indx = var_count_df.loc[var_count_df['dif'] < 0,:].index.tolist()[0]
     var_count_df['dif'] = var_count_df.type - var_count_df.fin_row_counts
-    var_count_df.index.rename(['noise','var'], inplace = True)
-    var_count_df.reset_index(inplace = True)
+    if var_count_df.index.names == ['noise','type']:
+        dif_indx = var_count_df.loc[var_count_df['dif'] < 0, :].index.tolist()[0]
+        var_count_df.index.rename(['noise','var'], inplace = True)
+        var_count_df.reset_index(inplace = True)
+    else:
+        dif_indx = var_count_df.loc[var_count_df['dif'] < 0, ['noise','var']]
+        dif_indx = dif_indx.iloc[0].tolist()
     make_up = abs(var_count_df.loc[(var_count_df['noise'] == dif_indx[0]) & (var_count_df['var'] == dif_indx[1])]['dif'].item())
     noise_df = var_count_df[(var_count_df['noise'] == dif_indx[0]) & ~(var_count_df['var'] == dif_indx[1])]
     var_df = var_count_df[~(var_count_df['noise'] == dif_indx[0]) & (var_count_df['var'] == dif_indx[1])]
@@ -178,10 +182,14 @@ def var_ratio_returner(importance,var_n, noise_var_ratio, priority):
             warnings.warn(
                 'There are not enough variables in the data to return the required number of variables (sorry)')
         var_counter['fin_row_counts'] = round(var_counter.ratio * (var_n / sum(var_counter.ratio)))
-        if any(var_counter.fin_row_counts < var_counter.type):
-            var_counter['dif'] =  var_counter.type - var_counter.fin_row_counts
-            var_counter_fin = var_count_sorter(var_counter)
-            warnings.warn('variable ratio could not be maintained while achieving the correct number of vars')
+        count = 0
+        while any(var_counter.type < var_counter.fin_row_counts):
+            var_counter['dif'] = var_counter.type - var_counter.fin_row_counts
+            var_counter = var_count_sorter(var_counter)
+            count = count + 1
+            print(count)
+        warnings.warn('variable ratio could not be maintained while achieving the correct number of vars')
+        var_counter_fin = var_counter
     else:
         var_counter['fin_row_counts'] = round(var_counter.ratio * (var_n / sum(var_counter.ratio)))
         var_counter['fin_row_counts'] = list(
