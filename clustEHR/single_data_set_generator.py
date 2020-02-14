@@ -47,11 +47,11 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                    'urinary_tract_infections*']
 
     # sorting life out if statements
-    if not isinstance(clusters, int) or (isinstance(clusters, list) and isinstance(clusters[0], str)):
+    if not (isinstance(clusters, int) or (isinstance(clusters, list) and isinstance(clusters[0], str))):
         raise ValueError('clusters needs to be either an int representing the number of clusters or a list of diseases')
     elif isinstance(clusters, int) and clusters <= len(module_list):
         clusters = random.sample(module_list, clusters)
-    elif isinstance(cluster, int) and clusters > len(module_list):
+    elif isinstance(clusters, int) and clusters > len(module_list):
         raise ValueError('More clusters than possible diseasese, decrease number of clusters')
     else:
         clusters = [i for i in clusters for j in module_list if i in j]
@@ -64,7 +64,9 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
 
     if noise_var_ratio == None:
         noise_var_ratio = [[3,3],[1,1]]
-    if out_file[-1] != '\\' or out_file[-1] != '/'
+
+
+    if not (out_file[-1] == '\\' or out_file[-1] == '/'):
         out_file = out_file + '\\'
     # generate synthea data
 
@@ -77,7 +79,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                     str(seed)
                     )
 
-        file_list = dg._read_files(file_name, out_file= out_folder)
+        file_list = dg._read_files(file_name,n = n, out_file= out_folder)
         disease_cut = re.sub('\*','',disease)
         df = dg.full_out(disease_cut, df_list = file_list, write_out = (out_folder + file_name + '/'))
         dg._remove_files(out_file + file_name + '/')
@@ -98,7 +100,38 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
         var_count = dp.var_ratio_returner(var_selector,var_n = var_n, noise_var_ratio=noise_var_ratio, priority = priority)
         vars = dp.var_getter(var_count,var_selector)
 
-    df_fin = df_X[vars]
+    vars1 = [var for var in vars if var in df_X.columns.tolist()]
+    vars2 = [var for var in vars if var not in vars1]
+    if len(vars2) > 0:
+        df_X = df_X[vars1]
+        df_X['PATIENT'] = outcomes['PATIENT']
+        df_fin = pd.merge(df_X, comb_df[vars2 + ['PATIENT']],how = 'left', on= 'PATIENT')
+    else:
+        df_X = df_X[vars1]
+        df_X['PATIENT'] = outcomes['PATIENT']
+        df_fin = df_X
+
+
+    time = re.sub('\..*','',str(dt.datetime.now().time()))
+    time = re.sub(':','-',time)
+    folder_name = ('output'
+                   + '_'
+                   + str(dt.datetime.now().date())
+                   + '_'
+                   + time)
+
+    os.mkdir(out_file + folder_name)
+
+    df_fin.to_csv(out_file + folder_name + '/cluster_data.csv')
+    df_y.to_csv(out_file + folder_name + '/labels.csv')
+    outcomes.to_csv(out_file + folder_name + '/outcomes.csv')
+
+    # todo write meta
+
+
+
+
+
 
 
 

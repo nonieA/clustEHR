@@ -106,7 +106,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     np.savetxt((file_out + "/patstest.txt"),pats, delimiter = ",", fmt = "%s")
     set_up.to_csv((file_out + "/setup.csv"))
 
-def _read_files(folder_name, file_list="default", out_file = os.getcwd()):
+def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
     """
     Reads files gets all the cases
     :param folder_name: folder where the data lives
@@ -128,7 +128,7 @@ def _read_files(folder_name, file_list="default", out_file = os.getcwd()):
     full_file_name = out_file + folder_name + "/csv/"
     get_names = lambda x: re.sub("\.csv", "", x)
     names_list = list(map(get_names, file_list))
-    patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header = None, names = ["PATIENT"])
+    patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header = None, names = ["PATIENT"]).loc[:(n-1),:]
     df_list = dict.fromkeys(names_list, 0)
     disease = re.sub("_.*", "", folder_name)
 
