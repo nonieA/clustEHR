@@ -2,7 +2,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import statistics
 import re
-
+import numpy as np
+from scipy.stats import mode
 def rf_noise(df_X,df_y,params = None, og_df = None):
 
     def rfor_imp(df_X, df_y):
@@ -60,3 +61,21 @@ def var_type(*args):
                            'type': [var_bin(df[i]) for df in args for i in df.columns]})
     var_df = var_df.drop_duplicates('vars')
     return(var_df)
+
+def percentile_dif(s1, s2,perc):
+    s1_l = np.percentile(s1,perc)
+    s1_u = np.percentile(s1,(100 - perc))
+    s2_l = np.percentile(s2, perc)
+    s2_u = np.percentile(s2, (100 - perc))
+    dif = min((s2_u - s1_l),(s1_u - s2_l))/max((s2_u - s1_l),(s1_u - s2_l))
+    return(dif)
+
+def mode_dif(s1, s2):
+    if mode(s1) == mode(s2):
+        return(0)
+    else:
+        return(1)
+
+
+
+

@@ -215,5 +215,3 @@ def var_getter(var_counter_fin,importance):
     return(var_list)
 
 
-
-
