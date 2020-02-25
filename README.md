@@ -1,3 +1,11 @@
+<details><summary>CLICK ME</summary>
+<p>
+```python
+import pandas as pd
+clust_data = pd.read_csv('./test_data/output_2020-02-14_16-51-10/cluster_data.csv')
+```
+</p>
+</details>
 # clustEHR
 
 ## About 
@@ -23,10 +31,26 @@ noise variables to features. Sometimes you can not keep the variable type ratio
 and have reach the number of desired variables so you can decide which argument 
 is more important to preserve.
 
+To define the ratio of variable types you use nested lists. 
 
+\[\[number of cont features, number of cat features, number of bin features],
+\[number of cont noise variables, number of cat noise variables, number of bin noise variables]]
 
-seperation = None, priority = 'var_n' , 
-## Outputs 
+#### Separation 
+You can also control for separation of clusters through using a symmetrical matrix 
+of the clusters seperation from each other
+
+\[\[NA, v.close, far],\
+\[v.close, NA, medium],\
+\[far, medium, NA]]
+
+Disease combinations will then be picked with corresponding seperations. 
+
+## Outputs
+There are four CSVs exported: 
+#### cluster_data.csv
+contains 
+
 ## Noise Variables and Variable type 
 ## Seperation 
 
