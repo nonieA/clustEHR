@@ -74,9 +74,10 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
         pats = pd.read_csv((file_out + "/csv/conditions.csv"), usecols=['PATIENT','DESCRIPTION'])
         pats = pats[~pats['DESCRIPTION'].isin(cvd)].PATIENT.unique()
         seed_str = str(int(seed_str) + 1)
+        npats_old = npats
         npats = len(pats)
-        if count == 0 and npats > 0:
-            rate = int(p)/npats
+        if npats > 0:
+            rate = int(p)/(npats - npats_old)
         if count > 2 and npats == 0:
             break
         else:
@@ -85,7 +86,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
         if npats == 0 and int(p) < 200000:
             p = str(int(p) * 5)
         elif npats > 0:
-            p = str(int(abs(((n - npats) * rate + 1))))
+            p = str(min(int(abs(((n - npats) * (rate * 1.05) + 1))), 500000))
 
 
 
@@ -131,7 +132,7 @@ def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
     patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header = None, names = ["PATIENT"]).loc[:(n-1),:]
     df_list = dict.fromkeys(names_list, 0)
     disease = re.sub("_.*", "", folder_name)
-
+    print('i am running')
     # sort through files and get only the patients
     for file in file_list:
 

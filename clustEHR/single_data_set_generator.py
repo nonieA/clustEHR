@@ -9,7 +9,7 @@ import noise_seperation as ns
 import datetime as dt
 import warnings
 def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
-                  seperation = None, priority = var_n , out_file = os.getwd(), export = False, verbose = True ):
+                  seperation = None, priority = 'var_n' , out_file = os.getcwd(), export = False, verbose = True ):
     """
     :param n: number of patients, ints or list of ints where the lenght is equal to number of clusters
     :param seed: int, random seed
@@ -23,8 +23,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
     :return: 1 cluster test data set
     """
     module_list = ['appendicitis*',
-                   'asthma*',
-                   'atopy*',
+                   'asthma',
                    'breast_cancer*',
                    'bronchitis*',
                    'colorectal_cancer*',
@@ -34,7 +33,6 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                    'dermatitis*',
                    'epilepsy*',
                    'fibromyalgia*',
-                   'food_allergies*',
                    'gallstones*',
                    'gout*',
                    'hypothyroidism*',
@@ -71,10 +69,11 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
     # generate synthea data
 
     def one_dis(n, disease, seed, out_folder):
+        data = str(dt.datetime.now().date())
         dg._disease_counter(n,disease, seed, out_folder)
         file_name = (re.sub('\*',"",disease, count = 0) +
                     "_" +
-                    str(dt.datetime.now().date()) +
+                    date +
                     "_" +
                     str(seed)
                     )
@@ -120,12 +119,16 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                    + '_'
                    + time)
 
+
+    df_y = pd.merge(df_y['PATIENT'], comb_df[['PATIENT','DISEASE']], how = 'left', on = 'PATIENT')
+
     os.mkdir(out_file + folder_name)
 
     df_fin.to_csv(out_file + folder_name + '/cluster_data.csv')
     df_y.to_csv(out_file + folder_name + '/labels.csv')
     outcomes.to_csv(out_file + folder_name + '/outcomes.csv')
-
+    var_selector.to_csv(out_file + folder_name +'/varstypes.csv')
+    return(df_fin)
     # todo write meta
 
 
