@@ -1,11 +1,9 @@
-<details><summary>CLICK ME</summary>
-<p>
+
 ```python
 import pandas as pd
 clust_data = pd.read_csv('./test_data/output_2020-02-14_16-51-10/cluster_data.csv')
 ```
-</p>
-</details>
+
 # clustEHR
 
 ## About 
