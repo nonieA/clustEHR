@@ -1,9 +1,3 @@
-
-```python
-import pandas as pd
-clust_data = pd.read_csv('./test_data/output_2020-02-14_16-51-10/cluster_data.csv')
-```
-
 # clustEHR
 
 ## About 
@@ -47,9 +41,27 @@ Disease combinations will then be picked with corresponding seperations.
 ## Outputs
 There are four CSVs exported: 
 #### cluster_data.csv
-contains 
+this contains the dataframe of data to be clustered 
 
-## Noise Variables and Variable type 
+|PATIENT   |RACE |ONSET_AGE|encounters_bf|cvdbefore|
+|---|---|---|---|---|
+|26d4f6d9|white|38|2|0|
+|b0d5da50|white|43|4|0|
+|6597980b|hispanic|41|4|2|
+
+#### labels.csv
+This contains the true cluster labels 
+
+#### outcomes.csv 
+this contains the outcomes for each patient including death date, operations
+and drugs taken 
+
+## Noise Variables
+Noise variables have been found using the feature importance from training a 
+random forrest. A cut off has been defined through establishing known noise
+variable importance is and anything bellow that is defined as noise. 
+
 ## Seperation 
+disease seperation has been defined as: 
 
 

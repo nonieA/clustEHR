@@ -72,10 +72,31 @@ std_df = cut_offs.pivot(index = 'disease1', columns = 'disease2', values = 'Hom_
 std_df = std_df[std_df.index.tolist()]
 
 order = random.sample(range(len(sep_mat)),len(sep_mat))
-for i in order
-    if all(test[1])
 
-# Emergencany get data
+icd_10 = pd.read_csv('C:\\Users\\nonie\\Documents\\icd10cm_codes_2019.txt', sep = '\t')
+icd_list = icd_10.iloc[:,0].to_list()
+module_list = [re.sub('\*','',i) for i in module_list]
+module_list = [re.sub('_',' ',i) for i in module_list]
+module_list[module_list == 'urinary tract infections'] = 'urinary tract infection'
+def disease_checker(str1,str2):
+     str_check = str1.lower()
+     list_in = str2.split()
+     if all(i in str_check for i in list_in):
+         return(True)
+     else:
+         return(False)
+
+
+codes = [[i,j] for i in icd_list for j in module_list if disease_checker(i,j)]
+icd_df = pd.DataFrame({'disease':[i[1] for i in codes],
+                       'codes':[re.sub(' .*','',i[0]) for i in codes],
+                       'description':[re.sub('\A\S* *','',i[0]) for i in codes]})
+icd_df = icd_df.sort_values('disease')
+icd_df = icd_df[~icd_df['codes'].str.contains('Z')]
+icd_df = icd_df[icd_df['codes'].str.len() <= 4]
+icd_df['codes'] = icd_df['codes'].str.slice(0,2)
+icd_df = icd_df.drop_duplicates(['disease','codes'])
+#Emergencany get data
 
 file_list = os.listdir('C:\\Users\\nonie\\Documents\\clustEHR\\run_through\\')
 
