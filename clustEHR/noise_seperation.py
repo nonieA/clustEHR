@@ -7,7 +7,6 @@ from scipy.stats import mode
 def rf_noise(df_X,df_y,params = None, og_df = None):
 
     def rfor_imp(df_X, df_y):
-        set
         df_y = df_y.DISEASE
         rfor = RandomForestClassifier(n_estimators=1000).fit(df_X, df_y).feature_importances_
         importance = pd.DataFrame({'vars': df_X.columns, 'importance': rfor})

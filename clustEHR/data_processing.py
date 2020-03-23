@@ -1,7 +1,6 @@
 """
 Takes multiple disease DFs and processes them to make one clusterable dataset
 """
-
 import pandas as pd
 import os
 import numpy as np
@@ -75,8 +74,10 @@ def data_clean(df,
                      'QOL_RATE']
 
     drop_cols = list(df_X.columns) + fill_nas + mult_imps + drop_list
+
     def column_check(columns, comb_list):
         return([i for i in comb_list if i in columns])
+
     if comb != None:
         comb = {k:column_check(df.columns,v) for (k,v) in comb.items()}
         comb_dict2 = {k: df[comb.get(k)].sum(axis=1) for k in comb}
@@ -87,7 +88,7 @@ def data_clean(df,
     df_else = pd.concat([df.drop(columns = drop_cols), df_fill], axis = 1)
 
     for i in df_else.columns:
-        if df_else[i].isna().sum() > df_else.shape[0] *2 /3:
+        if df_else[i].isna().sum() > df_else.shape[0] *4 /5:
             df_else = df_else.drop(i, axis = 1)
 
 

@@ -55,7 +55,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     # run synthea while npats is less then chosen n
 
     while npats < n and count < 100:
-        synth_cmd = ("java -jar synthea-with-dependencies.jar -m " +
+        synth_cmd = ("java -jar synthea-with-dependencies.jar -a 18-100 -m " +
                      disease +
                      " -p " +
                      p +
@@ -190,7 +190,7 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
                   .size()
                   .reset_index()
                   .rename(columns={'PATIENT': 'PATIENT', 'DESCRIPTION': 'DESCRIPTION', 0: 'COUNT'})
-                  .pivot(index='PATIENT', columns='DESCRIPTION', values='COUNT')
+                  .pivot_table(index='PATIENT', columns='DESCRIPTION', values='COUNT', fill_value=0)
                   .reset_index()
                   .rename(columns=lambda x: x + timing if x != 'PATIENT' else x))
 
