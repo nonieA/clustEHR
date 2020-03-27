@@ -132,7 +132,6 @@ def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
     patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header = None, names = ["PATIENT"]).loc[:(n-1),:]
     df_list = dict.fromkeys(names_list, 0)
     disease = re.sub("_.*", "", folder_name)
-    print('i am running')
     # sort through files and get only the patients
     for file in file_list:
 
@@ -329,7 +328,7 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
     for i in [cond_df, df_list['procedures'], df_list['encounters'], df_list['medications']]:
         for j in ['before', 'after']:
             x = _var_counter(i, onset_df, timing = j)
-            df = pd.merge(df, x, how = 'left', on = 'PATIENT')
+            df = pd.merge(df, x, how = 'left', on = 'PATIENT').fillna(0, downcast='infer')
     if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
     return (df)
