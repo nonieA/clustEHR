@@ -191,7 +191,8 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
                   .rename(columns={'PATIENT': 'PATIENT', 'DESCRIPTION': 'DESCRIPTION', 0: 'COUNT'})
                   .pivot_table(index='PATIENT', columns='DESCRIPTION', values='COUNT', fill_value=0)
                   .reset_index()
-                  .rename(columns=lambda x: x + timing if x != 'PATIENT' else x))
+                  .rename(columns=lambda x: x + timing if x != 'PATIENT' else x)
+                  )
 
         return (new_df)
 
@@ -300,6 +301,8 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
                  'YEARS_TO_DEATH']]
 
         return (df)
+
+
     onset_df = _onset_finder(df_list['conditions'])
     pats_df = _pats_getter(df_list['patients'], onset_df)
     obvs_df = _obvs_processor(df_list['observations'], onset_df, bin_vars= '')
@@ -324,11 +327,19 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
     df = pd.merge(pats_df, obvs_df, how = 'outer', on = 'PATIENT')
     cond_df = cond_df[cond_df.DESCRIPTION.isin(disease_list)]
     cond_df['DESCRIPTION'] = cond_df.DESCRIPTION.apply(lambda x: 'cvd' if x in cvd_list else x)
-
+    current_cols = df.columns.tolist()
     for i in [cond_df, df_list['procedures'], df_list['encounters'], df_list['medications']]:
         for j in ['before', 'after']:
+
             x = _var_counter(i, onset_df, timing = j)
-            df = pd.merge(df, x, how = 'left', on = 'PATIENT').fillna(0, downcast='infer')
+
+            df = pd.merge(df, x, how = 'left', on = 'PATIENT')
+
+    new_cols = [i for i in df.columns.tolist() if i not in current_cols]
+    df[new_cols] =(df[new_cols]
+                   .fillna(0)
+                   .apply(lambda x: x.astype('int') if x.dtypes == 'float64' else x , axis = 0))
+
     if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
     return (df)

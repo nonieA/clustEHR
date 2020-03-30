@@ -59,10 +59,11 @@ def data_clean(df,
                fill_nas = 'auto',
                comb = None,
                outcome = 'auto',
+               zero_rat = 0.15,
                drop_list = ['START', 'ETHNICITY']):
 
 
-    df_X = df[['PATIENT', 'DISEASE', 'MARITAL', 'RACE',  'GENDER',
+    df_keep = df[['PATIENT', 'DISEASE', 'MARITAL', 'RACE',  'GENDER',
        'DESCRIPTION', 'ONSET_AGE', 'DEATH_AGE', 'YEARS_TO_DEATH']]
 
     if fill_nas == 'auto':
@@ -91,12 +92,22 @@ def data_clean(df,
         if df_else[i].isna().sum() > df_else.shape[0] *4 /5:
             df_else = df_else.drop(i, axis = 1)
 
+    def zero_sel(df, column, zero_rat):
+        z_count = len(df[df[column] == 0])
+        count = len(df)
+        if z_count/count >(1- zero_rat):
+            return(True)
+        else:
+            return(False)
+
+    zero_drop = [i for i in df_else.columns.tolist() if zero_sel(df_else,i,zero_rat) == True]
+    df_else = df_else.drop(zero_drop, axis = 1)
+
 
     df_imps = df[mult_imps]
     imp = IterativeImputer(max_iter = 100)
     df_imps = imp.fit_transform(df_imps)
     df_imps = pd.DataFrame(df_imps, columns = mult_imps ).reset_index(drop = True)
-
     df_else['DISEASE'] = df['DISEASE']
 
     def mixed_impute(df, col):
