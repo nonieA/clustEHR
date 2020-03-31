@@ -29,8 +29,14 @@ def _combine_disease_dfs(disease_list):
         return(stop[-1])
 
     df_disease_list = [list_checker(i) for i in disease_list]
+    int_cols = [df.select_dtypes(include = 'int').columns.tolist() for df in df_disease_list]
+    int_cols = [j for i in int_cols for j in i]
+
     df = pd.concat(df_disease_list, sort=False)
     df = df.replace([np.inf, -np.inf], np.nan)
+    df[int_cols] = (df[int_cols]
+                   .fillna(0)
+                   .apply(lambda x: x.astype('int'), axis = 0))
 
     concat_dict = {x.DISEASE[1]:x.iloc[:,get_index(x):].columns.tolist() for x in df_disease_list}
     unique_drug_list = [j for i in concat_dict.values() for j in i]
@@ -56,86 +62,62 @@ def _combine_disease_dfs(disease_list):
 def data_clean(df,
                y_var = ['DISEASE'],
                mult_imps = 'auto',
-               fill_nas = 'auto',
                comb = None,
                outcome = 'auto',
                zero_rat = 0.15,
                drop_list = ['START', 'ETHNICITY']):
 
 
-    df_keep = df[['PATIENT', 'DISEASE', 'MARITAL', 'RACE',  'GENDER',
-       'DESCRIPTION', 'ONSET_AGE', 'DEATH_AGE', 'YEARS_TO_DEATH']]
-
-    if fill_nas == 'auto':
-        fill_nas = ['cvdbefore', 'cvdafter']
-    df_fill = df[fill_nas].fillna(0)
+    df_alt = df.copy()
 
     if mult_imps == 'auto':
         mult_imps = ['DALY_FIRST', 'QALY_FIRST', 'QOL_FIRST', 'DALY_RATE', 'QALY_RATE',
                      'QOL_RATE']
 
-    drop_cols = list(df_X.columns) + fill_nas + mult_imps + drop_list
+    df_imps = df_alt[mult_imps]
+    imp = IterativeImputer(max_iter = 100)
+    df_imps = imp.fit_transform(df_imps)
+    df_imps = pd.DataFrame(df_imps, columns = mult_imps ).reset_index( drop = True)
+
+    df_alt = df_alt.drop(mult_imps, axis = 1)
+    df_alt = pd.concat([df_alt.reset_index(drop = True), df_imps],  axis = 1 )
 
     def column_check(columns, comb_list):
         return([i for i in comb_list if i in columns])
 
     if comb != None:
-        comb = {k:column_check(df.columns,v) for (k,v) in comb.items()}
+        comb = {k:column_check(df_alt.columns,v) for (k,v) in comb.items()}
         comb_dict2 = {k: df[comb.get(k)].sum(axis=1) for k in comb}
-        comb_dict2 = pd.DataFrame(comb_dict2)
-        drop_cols = drop_cols + sum(comb.values(), [])
-        df_fill = pd.concat([df_fill, comb_dict2], axis = 1)
+        comb_dict2 = pd.DataFrame(comb_dict2).reset_index(drop=True)
+        drop_cols = sum(comb.values(), [])
 
-    df_else = pd.concat([df.drop(columns = drop_cols), df_fill], axis = 1)
+    df_alt = df_alt.drop(columns = drop_cols).join(comb_dict2)
 
-    for i in df_else.columns:
-        if df_else[i].isna().sum() > df_else.shape[0] *4 /5:
-            df_else = df_else.drop(i, axis = 1)
 
-    def zero_sel(df, column, zero_rat):
-        z_count = len(df[df[column] == 0])
+
+    def zero_sel(df, column, zero_rat, type = 'zero'):
+        if type == 'zero':
+            z_count = len(df[df[column] == 0])
+        else:
+            z_count = df[column].isna().sum()
         count = len(df)
         if z_count/count >(1- zero_rat):
             return(True)
         else:
             return(False)
 
-    zero_drop = [i for i in df_else.columns.tolist() if zero_sel(df_else,i,zero_rat) == True]
+    zero_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_else,i,zero_rat) == True]
+    na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_else,i,zero_rat, type = 'na') == True]
     df_else = df_else.drop(zero_drop, axis = 1)
 
-
-    df_imps = df[mult_imps]
-    imp = IterativeImputer(max_iter = 100)
-    df_imps = imp.fit_transform(df_imps)
-    df_imps = pd.DataFrame(df_imps, columns = mult_imps ).reset_index(drop = True)
-    df_else['DISEASE'] = df['DISEASE']
-
-    def mixed_impute(df, col):
-        if df[col].dtype == 'float64':
-            for i in df.DISEASE.unique():
-                x = df[col][df.DISEASE == i]
-                if all(x.isna()):
-                    df.loc[df.DISEASE == i,col] = x.fillna(df[col].max() * -1)
-                else:
-                    df.loc[df.DISEASE == i,col] = x.fillna(df[col].mean())
-        else:
-            pass
-        return(df)
-
-
-    for i in df_else.columns:
-        df_else = mixed_impute(df_else, i)
-
-    df_else = pd.concat([df_X, df_else.drop(columns = ['DISEASE'])], axis = 1).reset_index(drop = True)
-    df_else = pd.concat([df_else, df_imps], axis = 1)
     if outcome == 'auto':
         outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
                    list(df_else.filter(regex = 'aft').columns) +
                    list(df_else.filter(regex = 'RATE').columns))
 
 
-    df_else = df_else.dropna()
-    df_y = df_else[['PATIENT'] + y_var].replace(df_else.DISEASE.unique(), range(0,df_else.DISEASE.nunique()))
+    #todo finish Y
+    df_y = df_alt[['PATIENT'] + y_var].assign( )
     df_out = df_else[['PATIENT'] + outcome]
     df_X = df_else.drop(y_var + outcome, axis = 1)
 

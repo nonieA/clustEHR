@@ -338,7 +338,7 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
     new_cols = [i for i in df.columns.tolist() if i not in current_cols]
     df[new_cols] =(df[new_cols]
                    .fillna(0)
-                   .apply(lambda x: x.astype('int') if x.dtypes == 'float64' else x , axis = 0))
+                   .apply(lambda x: x.astype('int') , axis = 0))
 
     if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
