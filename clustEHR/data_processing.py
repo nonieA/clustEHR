@@ -106,20 +106,22 @@ def data_clean(df,
         else:
             return(False)
 
-    zero_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_else,i,zero_rat) == True]
-    na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_else,i,zero_rat, type = 'na') == True]
-    df_else = df_else.drop(zero_drop, axis = 1)
+    zero_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat) == True]
+    na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat, type = 'na') == True]
+    df_alt = df_alt.drop(zero_drop, axis = 1)
 
     if outcome == 'auto':
         outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
-                   list(df_else.filter(regex = 'aft').columns) +
-                   list(df_else.filter(regex = 'RATE').columns))
+                   list(df_alt.filter(regex = 'aft').columns) +
+                   list(df_alt.filter(regex = 'RATE').columns))
 
 
-    #todo finish Y
-    df_y = df_alt[['PATIENT'] + y_var].assign( )
-    df_out = df_else[['PATIENT'] + outcome]
-    df_X = df_else.drop(y_var + outcome, axis = 1)
+
+    df_y = df_alt[['PATIENT'], y_var]
+    df_y['code'] = df_alt[y_var].copy()
+    df_y.loc['code'] = df_y.code.replace(df_y.code.unique(),range(df_y.code.nunique()))
+    df_out = df_alt[['PATIENT'] + outcome]
+    df_X = df_alt.drop(y_var + outcome, axis = 1)
 
     OHE = OneHotEncoder(handle_unknown='ignore')
     hot = OHE.fit_transform(df_X.select_dtypes(include=['object']).drop(columns = 'PATIENT')).toarray()
