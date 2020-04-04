@@ -120,8 +120,6 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                    + time)
 
 
-    df_y = pd.merge(df_y['PATIENT'], comb_df[['PATIENT','DISEASE']], how = 'left', on = 'PATIENT')
-
     os.mkdir(out_file + folder_name)
 
     df_fin.to_csv(out_file + folder_name + '/cluster_data.csv')

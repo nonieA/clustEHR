@@ -29,7 +29,7 @@ def _combine_disease_dfs(disease_list):
         return(stop[-1])
 
     df_disease_list = [list_checker(i) for i in disease_list]
-    int_cols = [df.select_dtypes(include = 'int').columns.tolist() for df in df_disease_list]
+    int_cols = [df.select_dtypes(include = 'int64').columns.tolist() for df in df_disease_list]
     int_cols = [j for i in int_cols for j in i]
 
     df = pd.concat(df_disease_list, sort=False)
@@ -64,11 +64,12 @@ def data_clean(df,
                mult_imps = 'auto',
                comb = None,
                outcome = 'auto',
-               zero_rat = 0.15,
+               zero_rat = 0.9,
                drop_list = ['START', 'ETHNICITY']):
 
 
     df_alt = df.copy()
+    df_alt = df_alt.drop(drop_list, axis = 1)
 
     if mult_imps == 'auto':
         mult_imps = ['DALY_FIRST', 'QALY_FIRST', 'QOL_FIRST', 'DALY_RATE', 'QALY_RATE',
@@ -100,15 +101,17 @@ def data_clean(df,
             z_count = len(df[df[column] == 0])
         else:
             z_count = df[column].isna().sum()
+        if z_count == 0:
+            return(False)
         count = len(df)
-        if z_count/count >(1- zero_rat):
+        if z_count/count > zero_rat:
             return(True)
         else:
             return(False)
 
     zero_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat) == True]
     na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat, type = 'na') == True]
-    df_alt = df_alt.drop(zero_drop, axis = 1)
+    df_alt = df_alt.drop(zero_drop + na_drop, axis = 1)
 
     if outcome == 'auto':
         outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
@@ -117,9 +120,9 @@ def data_clean(df,
 
 
 
-    df_y = df_alt[['PATIENT'], y_var]
+    df_y = df_alt[['PATIENT'] + y_var]
     df_y['code'] = df_alt[y_var].copy()
-    df_y.loc['code'] = df_y.code.replace(df_y.code.unique(),range(df_y.code.nunique()))
+    df_y.loc[:,'code'] = df_y.code.replace(df_y.code.unique(),range(df_y.code.nunique()))
     df_out = df_alt[['PATIENT'] + outcome]
     df_X = df_alt.drop(y_var + outcome, axis = 1)
 
@@ -127,7 +130,7 @@ def data_clean(df,
     hot = OHE.fit_transform(df_X.select_dtypes(include=['object']).drop(columns = 'PATIENT')).toarray()
     hot = pd.DataFrame(hot).rename(columns=lambda x: OHE.get_feature_names()[x])
     df_X = df_X.reset_index(drop=True)
-    df_X = pd.concat([df_X, hot], axis=1).select_dtypes(include=['float64'])
+    df_X = pd.concat([df_X, hot], axis=1)   .select_dtypes(exclude=['object'])
 
     return(df_X, df_y, df_out)
 

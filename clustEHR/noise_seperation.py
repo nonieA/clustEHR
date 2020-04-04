@@ -6,22 +6,12 @@ import numpy as np
 from scipy.stats import mode
 
 
-def mixed_impute(df, col):
-    if df[col].dtype == 'float64':
-        for i in df.DISEASE.unique():
-            x = df[col][df.DISEASE == i]
-            if all(x.isna()):
-                df.loc[df.DISEASE == i, col] = x.fillna(df[col].max() * -1)
-            else:
-                df.loc[df.DISEASE == i, col] = x.fillna(df[col].mean())
-    else:
-        pass
-    return (df)
 
 def rf_noise(df_X,df_y,params = None, og_df = None):
 
     def rfor_imp(df_X, df_y):
-        df_y = df_y.DISEASE
+        df_y = df_y.code
+        df_X = df_X.apply()
         rfor = RandomForestClassifier(n_estimators=1000).fit(df_X, df_y).feature_importances_
         importance = pd.DataFrame({'vars': df_X.columns, 'importance': rfor})
         importance['rank'] = importance.importance.rank(ascending=False)
