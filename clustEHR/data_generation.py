@@ -33,6 +33,15 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
            "History of cardiac arrest (situation)",
            "Stroke",
            "Atrial Fibrillation"]
+    excepts_dict = {'copd':['Anemia (disorder)'],
+                    'dementia':['Pneumonia'],
+                    'hypothyrodism':['Anemia']}
+
+
+    if disease in excepts_dict.keys():
+       cvd = cvd + excepts_dict[disease]
+
+
 
     seed_str = str(seed)
     p = "2000"
@@ -47,8 +56,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
                 "_" +
                 str(dt.datetime.now().date()) +
                 "_" +
-                seed_str +
-                "/"
+                seed_str
                 )
 
 
@@ -70,14 +78,18 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
         if run_thing.stdout.decode('utf-8').find('[0 loaded]') > -1:
             raise ValueError('so the disease input doesnt link to a module')
 
-
-        pats = pd.read_csv((file_out + "/csv/conditions.csv"), usecols=['PATIENT','DESCRIPTION'])
-        pats = pats[~pats['DESCRIPTION'].isin(cvd)].PATIENT.unique()
         seed_str = str(int(seed_str) + 1)
+        pats = pd.read_csv((file_out + "/csv/conditions.csv"), usecols=['PATIENT','DESCRIPTION'])
+
+
+        pats = pats[~pats['DESCRIPTION'].isin(cvd)].PATIENT.unique()
         npats_old = npats
         npats = len(pats)
+
+
+
         if npats > 0:
-            rate = int(p)/(npats - npats_old)
+            rate = int(p)/((npats - npats_old) + 1)
         if count > 2 and npats == 0:
             break
         else:
@@ -107,7 +119,140 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     np.savetxt((file_out + "/patstest.txt"),pats, delimiter = ",", fmt = "%s")
     set_up.to_csv((file_out + "/setup.csv"))
 
-def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
+def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
+    """
+    Generates synthea data for a disease with n number of cases
+    :param n: Number of disease cases
+    :param disease: synthea disease module as a string
+    :param seed: random number for
+    :param out_folder: output folder for data (if left blank will go to wd/output/disease)
+    :return: creates output in folder (doesn't actually return anything to python) also creates a config file
+    showing all the parameters needed to make this so you can save it for later
+    """
+    # todo write a verbose argument
+    # number of patients
+    npats = 0
+
+    # conditions not to count
+
+    cvd = ["Coronary Heart Disease",
+           "Myocardial Infarction",
+           "History of myocardial infarction (situation)",
+           "Cardiac Arrest",
+           "History of cardiac arrest (situation)",
+           "Stroke",
+           "Atrial Fibrillation"]
+    excepts_dict = {'copd':['Anemia (disorder)'],
+                    'dementia':['Pneumonia'],
+                    'hypothyrodism':['Anemia']}
+
+
+    if disease in excepts_dict.keys():
+       cvd = cvd + excepts_dict[disease]
+
+
+
+    seed_str = str(seed)
+    p = "2000"
+    conf = "synthea_config.txt"
+    count = 0
+
+    # Defining output directory
+
+    file_out = (out_folder+
+                '/' +
+                re.sub('\*',"",disease, count = 0) +
+                "_" +
+                str(dt.datetime.now().date()) +
+                "_" +
+                seed_str
+                )
+
+
+    # run synthea while npats is less then chosen n
+    if isinstance(n,int):
+        n_dif = [n]
+    else:
+        n_dif = n
+
+    while any(i > 0 for i in n_dif) and count < 100:
+        synth_cmd = ("java -jar synthea-with-dependencies.jar -a 18-100 -m " +
+                     disease +
+                     " -p " +
+                     p +
+                     " -s " +
+                     seed_str +
+                     " -c " +
+                     conf +
+                     " --exporter.baseDirectory " +
+                     file_out)
+
+        run_thing = subprocess.run(synth_cmd , stdout = subprocess.PIPE)
+        if run_thing.stdout.decode('utf-8').find('[0 loaded]') > -1:
+            raise ValueError('so the disease input doesnt link to a module')
+
+        seed_str = str(int(seed_str) + 1)
+        pats = pd.read_csv((file_out + "/csv/conditions.csv"), usecols=['PATIENT','DESCRIPTION'])
+
+        # make sure there are no duplicate rows
+        pats = pats[~pats['DESCRIPTION'].isin(cvd)].drop_duplicates()
+        #drop pats with more than one disease
+        drop_pats = pats.PATIENT.value_counts()
+        drop_pats = drop_pats[drop_pats > 1].index.values
+        pats = pats[~pats['PATIENT'].isin(drop_pats)]
+
+        rep_n  = pats.DESCRIPTION.nunique()
+        if isinstance(n,int):
+            n_list = [n for i in range(rep_n)]
+        else:
+            n_list = n[:rep_n]
+
+        npats_old = npats
+        count_list = pd.DataFrame({'npats':pats.DESCRIPTION.value_counts().tolist(), 'n': n_list})
+        count_list['ratio'] = count_list['npats']/ count_list['n']
+        min_indx = count_list[count_list['ratio'] == count_list['ratio'].min()].index[0]
+        npats = count_list.loc[min_indx,'npats']
+        n_dif = (count_list['n'] - count_list['npats']).to_list()
+
+
+        if npats > 0:
+            rate = int(p)/((npats - npats_old) + 1)
+        if count > 2 and npats == 0:
+            break
+        else:
+            print(disease, 'count ', count, 'pop ', p, 'pat count ', npats)
+
+        if npats == 0 and int(p) < 200000:
+            p = str(int(p) * 5)
+        elif npats > 0:
+            p = str(min(int(abs((min(n_dif) * (rate * 1.05) + 1))), 500000))
+
+
+
+        conf = "synthea2_config.txt"
+        count = count + 1
+
+    # setting up config file
+
+    set_up = pd.DataFrame({"n": str(n),
+              "disease": re.sub('\*', "", disease, count=0),
+              "seed": str(seed),
+              "count": str(count),
+              "pats_n": str(npats)},
+                index= [1])
+
+    # outputting config files
+    def get_labs(df, desc, n):
+        df2 = df.copy()
+        df2 = df2[df['DESCRIPTION'] == desc][:n]
+        return(df2)
+
+    pats_list = [get_labs(pats,pats.DESCRIPTION.unique()[i], n[i]) for i in range(len(n))]
+    pats_list = pd.concat(pats_list, axis = 0, ignore_index= True)
+    pats_list.to_csv(file_out + "/patstest.txt")
+    set_up.to_csv((file_out + "/setup.csv"))
+
+def _read_files(folder_name, n  , description = False, file_list="default", out_file = os.getcwd()):
     """
     Reads files gets all the cases
     :param folder_name: folder where the data lives
@@ -116,7 +261,21 @@ def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
     :param out_file: folder where to get stuff and put stuff back
     :return: a list of dfs which are all patients, corresponding to file list
     """
-    
+    cvd = ["Coronary Heart Disease",
+           "Myocardial Infarction",
+           "History of myocardial infarction (situation)",
+           "Cardiac Arrest",
+           "History of cardiac arrest (situation)",
+           "Stroke",
+           "Atrial Fibrillation"]
+    excepts_dict = {'copd':['Anemia (disorder)'],
+                    'dementia':['Pneumonia'],
+                    'hypothyrodism':['Anemia']}
+
+
+    if disease in excepts_dict.keys():
+       cvd = cvd + excepts_dict[disease]
+
     if file_list == "default":
         file_list = ["conditions.csv",
                      "encounters.csv",
@@ -129,9 +288,10 @@ def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
     full_file_name = out_file + folder_name + "/csv/"
     get_names = lambda x: re.sub("\.csv", "", x)
     names_list = list(map(get_names, file_list))
-    patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header = None, names = ["PATIENT"]).loc[:(n-1),:]
     df_list = dict.fromkeys(names_list, 0)
-    disease = re.sub("_.*", "", folder_name)
+    if description = False:
+        patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header=None, names=["PATIENT"]).loc[:(n - 1), :]
+
     # sort through files and get only the patients
     for file in file_list:
 
@@ -140,12 +300,26 @@ def _read_files(folder_name, n  , file_list="default", out_file = os.getcwd()):
         if file == "patients.csv":
             df = (pd.read_csv(full_file_name + file, encoding = "latin-1")
                   .pipe(pd.merge, patients, how = "right", left_on = "Id", right_on = "PATIENT"))
-            df['DISEASE'] = disease
+
         else:
             df = (pd.read_csv(full_file_name + file, encoding = "latin-1")
                   .pipe(pd.merge, patients, how = "inner", on = "PATIENT"))
         file2 = re.sub(".csv", "", file)
         df_list[file2] = df
+
+    if description == False:
+        disease = re.sub("_.*", "", folder_name)
+        df_list['patients']['DISEASE'] = disease
+    else:
+        desc =  df_list['conditions']
+        desc = (desc[~desc['DESCRIPTION']
+                .isin(cvd)].sort_values(by = 'START')
+                .drop_duplicates('PATIENT')
+                .drop(columns = 'START'))
+
+
+
+    else:
 
     return (df_list)
 
