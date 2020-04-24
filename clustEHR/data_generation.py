@@ -174,7 +174,7 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
         n_dif = [n]
     else:
         n_dif = n
-
+    p_tot = 0
     while any(i > 0 for i in n_dif) and count < 100:
         synth_cmd = ("java -jar synthea-with-dependencies.jar -a 18-100 -m " +
                      disease +
@@ -207,25 +207,26 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
         else:
             n_list = n[:rep_n]
 
-        npats_old = npats
+
         count_list = pd.DataFrame({'npats':pats.DESCRIPTION.value_counts().tolist(), 'n': n_list})
         count_list['ratio'] = count_list['npats']/ count_list['n']
         min_indx = count_list[count_list['ratio'] == count_list['ratio'].min()].index[0]
-        npats = count_list.loc[min_indx,'npats']
+        npats = count_list.loc[min_indx, 'npats']
+        p_tot = p_tot + int(p)
         n_dif = (count_list['n'] - count_list['npats']).to_list()
 
 
         if npats > 0:
-            rate = int(p)/((npats - npats_old) + 1)
+            rate = p_tot/npats + 1
         if count > 2 and npats == 0:
             break
         else:
-            print(disease, 'count ', count, 'pop ', p, 'pat count ', npats)
+            print(disease, 'count ', count, 'pop ', p, 'pat count ',npats)
 
         if npats == 0 and int(p) < 200000:
             p = str(int(p) * 5)
         elif npats > 0:
-            p = str(min(int(abs((min(n_dif) * (rate * 1.05) + 1))), 500000))
+            p = str(min(int(abs(min(n_dif) * rate * 1.05 + 1)), 500000))
 
 
 
@@ -247,12 +248,12 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
         df2 = df2[df['DESCRIPTION'] == desc][:n]
         return(df2)
 
-    pats_list = [get_labs(pats,pats.DESCRIPTION.unique()[i], n[i]) for i in range(len(n))]
+    pats_list = [get_labs(pats,pats.DESCRIPTION.unique()[i], n_list[i]) for i in range(len(n_list))]
     pats_list = pd.concat(pats_list, axis = 0, ignore_index= True)
-    pats_list.to_csv(file_out + "/patstest.txt")
+    pats_list.to_csv(file_out + "/patstest.csv")
     set_up.to_csv((file_out + "/setup.csv"))
 
-def _read_files(folder_name, n  , description = False, file_list="default", out_file = os.getcwd()):
+def _read_files(folder_name, n , description = False, file_list="default", out_file = os.getcwd()):
     """
     Reads files gets all the cases
     :param folder_name: folder where the data lives
@@ -261,20 +262,6 @@ def _read_files(folder_name, n  , description = False, file_list="default", out_
     :param out_file: folder where to get stuff and put stuff back
     :return: a list of dfs which are all patients, corresponding to file list
     """
-    cvd = ["Coronary Heart Disease",
-           "Myocardial Infarction",
-           "History of myocardial infarction (situation)",
-           "Cardiac Arrest",
-           "History of cardiac arrest (situation)",
-           "Stroke",
-           "Atrial Fibrillation"]
-    excepts_dict = {'copd':['Anemia (disorder)'],
-                    'dementia':['Pneumonia'],
-                    'hypothyrodism':['Anemia']}
-
-
-    if disease in excepts_dict.keys():
-       cvd = cvd + excepts_dict[disease]
 
     if file_list == "default":
         file_list = ["conditions.csv",
@@ -289,9 +276,12 @@ def _read_files(folder_name, n  , description = False, file_list="default", out_
     get_names = lambda x: re.sub("\.csv", "", x)
     names_list = list(map(get_names, file_list))
     df_list = dict.fromkeys(names_list, 0)
-    if description = False:
+    if description == False:
         patients = pd.read_csv(out_file + folder_name + "/patstest.txt", header=None, names=["PATIENT"]).loc[:(n - 1), :]
-
+    else:
+        patients_df = (pd.read_csv(out_file + folder_name + "/patstest.csv").drop(columns = 'Unnamed: 0')
+                       .rename({'PATIENT':'PATIENT','DESCRIPTION':'DISEASE'}, axis = 1))
+        patients = patients_df.drop(columns = 'DISEASE')
     # sort through files and get only the patients
     for file in file_list:
 
@@ -311,21 +301,13 @@ def _read_files(folder_name, n  , description = False, file_list="default", out_
         disease = re.sub("_.*", "", folder_name)
         df_list['patients']['DISEASE'] = disease
     else:
-        desc =  df_list['conditions']
-        desc = (desc[~desc['DESCRIPTION']
-                .isin(cvd)].sort_values(by = 'START')
-                .drop_duplicates('PATIENT')
-                .drop(columns = 'START'))
-
-
-
-    else:
+         df_list['patients'] = pd.merge(df_list['patients'],patients_df, how = 'outer' ,on = 'PATIENT')
 
     return (df_list)
 
 
 # todo export data set
-def full_out(disease, df_list, write_out = False, *args, **kwargs):
+def full_out(disease, df_list, description = False, write_out = False, *args, **kwargs):
     """
     turns the list of data frames into one nice easy to manage data frame
     :param disease: name of disease being looked at
@@ -395,6 +377,15 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
 
         df = df[['PATIENT', 'DESCRIPTION', 'START']]
         return (df)
+
+    def _onset_df_desc(df,pats_df):
+        pats = pats_df[['PATIENT','DISEASE']]
+        onset_df = pd.merge(df[['PATIENT','DESCRIPTION','START']],
+                            pats,
+                            how = 'right',
+                            left_on = ['PATIENT','DESCRIPTION'],
+                            right_on = ['PATIENT','DISEASE']).drop('DISEASE', axis = 1)
+        return(onset_df)
 
     def _year_dif(dates_1, dates_2):
         """
@@ -476,8 +467,10 @@ def full_out(disease, df_list, write_out = False, *args, **kwargs):
 
         return (df)
 
-
-    onset_df = _onset_finder(df_list['conditions'])
+    if description == False:
+        onset_df = _onset_finder(df_list['conditions'])
+    else:
+        onset_df = _onset_df_desc(df_list['conditions'],df_list['patients'])
     pats_df = _pats_getter(df_list['patients'], onset_df)
     obvs_df = _obvs_processor(df_list['observations'], onset_df, bin_vars= '')
     cond_df = df_list['conditions']
