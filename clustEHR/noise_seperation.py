@@ -47,7 +47,7 @@ def rf_noise(df_X,df_y,params = None, og_df = None):
         importance['rank'] = importance.importance.rank(ascending=False)
         return(importance)
 
-    na_cols = [i for i in df_X.columns.to_list() if df[i].isnull().any()]
+    na_cols = [i for i in df_X.columns.to_list() if df_X[i].isnull().any()]
     df_X.loc[:,na_cols] = df_X[na_cols].apply(lambda x: fill_in(df_y['code'],x),axis = 0)
     importance = rfor_imp(df_X,df_y)
     if og_df is not None:
@@ -67,12 +67,12 @@ def var_type(*args):
     def var_bin(series):
         if series.unique().tolist() == [0,1] or len(series.unique()) == 2:
             return('bin')
-        elif isinstance(series[1],float) or isinstance(series[1],int):
+        elif isinstance(series[1],float) or 'int' in str(type(series[1])):
             return('cont')
         else:
             return('cat')
 
-
+    args = [i for i in args if isinstance(i, pd.core.frame.DataFrame)]
     var_df = pd.DataFrame({'vars':[i for df in args for i in df.columns],
                            'type': [var_bin(df[i]) for df in args for i in df.columns]})
     var_df = var_df.drop_duplicates('vars')

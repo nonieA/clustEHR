@@ -8,8 +8,8 @@ import data_processing as dp
 import noise_seperation as ns
 import datetime as dt
 import warnings
-def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
-                  seperation = None, priority = 'var_n' , out_file = os.getcwd(), export = False, verbose = True ):
+def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
+                 priority = 'var_n' , out_file = os.getcwd() ):
     """
     :param n: number of patients, ints or list of ints where the lenght is equal to number of clusters
     :param seed: int, random seed
@@ -22,29 +22,39 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
     :param verbose: return updates of funcitons
     :return: 1 cluster test data set
     """
-    module_list = ['appendicitis*',
+    module_list = ['appendicitis',
                    'asthma',
                    'breast_cancer*',
                    'bronchitis*',
                    'colorectal_cancer*',
                    'copd',
-                   'cystic_fibrosis*',
+                   'cystic_fibrosis',
                    'dementia',
                    'dermatitis*',
                    'epilepsy*',
                    'fibromyalgia*',
-                   'gallstones*',
-                   'gout*',
+                   'gallstones',
+                   'gout',
                    'hypothyroidism*',
-                   'lung_cancer*',
-                   'lupus*',
-                   'metabolic_syndrome*',
+                   'lung_cancer',
+                   'lupus',
+                   'osteoarthritis',
+                   'osteoporosis',
+                   'rheumatoid_arthritis',
+                   'urinary_tract_infections']
+    desc_true_list = ['asthma',
+                   'copd',
+                   'dementia',
+                   'dermatitis*',
                    'osteoarthritis*',
                    'osteoporosis*',
                    'rheumatoid_arthritis*',
-                   'urinary_tract_infections*']
-
+                   'urinary_tract_infections']
     # sorting life out if statements
+    if description == True and isinstance(clusters,str):
+        clusters = [clusters]
+    if description == True and isinstance(clusters,int):
+        clusters = random.sample(desc_true_list,1)
     if not (isinstance(clusters, int) or (isinstance(clusters, list) and isinstance(clusters[0], str))):
         raise ValueError('clusters needs to be either an int representing the number of clusters or a list of diseases')
     elif isinstance(clusters, int) and clusters <= len(module_list):
@@ -68,9 +78,12 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
         out_file = out_file + '\\'
     # generate synthea data
 
-    def one_dis(n, disease, seed, out_folder):
-        data = str(dt.datetime.now().date())
-        dg._disease_counter(n,disease, seed, out_folder)
+    def one_dis(n, disease, seed, description, out_folder):
+        date = str(dt.datetime.now().date())
+        if description == False:
+            dg._disease_counter(n,disease, seed, out_folder)
+        else:
+            dg._disease_counter_1d(n, disease,seed, out_folder)
         file_name = (re.sub('\*',"",disease, count = 0) +
                     "_" +
                     date +
@@ -78,13 +91,16 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
                     str(seed)
                     )
 
-        file_list = dg._read_files(file_name,n = n, out_file= out_folder)
+        file_list = dg._read_files(file_name,n = n, description = description, out_file= out_folder)
         disease_cut = re.sub('\*','',disease)
-        df = dg.full_out(disease_cut, df_list = file_list, write_out = (out_folder + file_name + '/'))
+        df = dg.full_out(disease_cut,
+                         df_list = file_list,
+                         description = description,
+                         write_out = (out_folder + file_name + '/'))
         dg._remove_files(out_file + file_name + '/')
         return(df)
 
-    disease_list = [one_dis(n[i], clusters[i], seed, out_folder = out_file) for i in range(len(n))]
+    disease_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file) for i in range(len(n))]
 
 
     comb_df, excepts = dp._combine_disease_dfs(disease_list)
@@ -114,6 +130,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n,
     time = re.sub('\..*','',str(dt.datetime.now().time()))
     time = re.sub(':','-',time)
     folder_name = ('output'
+                   + ''.join([str(i) for i in clusters])
                    + '_'
                    + str(dt.datetime.now().date())
                    + '_'

@@ -472,6 +472,8 @@ def full_out(disease, df_list, description = False, write_out = False, *args, **
     else:
         onset_df = _onset_df_desc(df_list['conditions'],df_list['patients'])
     pats_df = _pats_getter(df_list['patients'], onset_df)
+    if description == True:
+        pats_df = pats_df.drop(columns = 'DESCRIPTION')
     obvs_df = _obvs_processor(df_list['observations'], onset_df, bin_vars= '')
     cond_df = df_list['conditions']
     cvd_list = ["Coronary Heart Disease",
@@ -499,8 +501,8 @@ def full_out(disease, df_list, description = False, write_out = False, *args, **
         for j in ['before', 'after']:
 
             x = _var_counter(i, onset_df, timing = j)
-
-            df = pd.merge(df, x, how = 'left', on = 'PATIENT')
+            if len(x) > 0:
+                df = pd.merge(df, x, how = 'left', on = 'PATIENT')
 
     new_cols = [i for i in df.columns.tolist() if i not in current_cols]
     df[new_cols] =(df[new_cols]

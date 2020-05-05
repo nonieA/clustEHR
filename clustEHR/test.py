@@ -8,6 +8,7 @@ import csv
 import data_generation as dg
 import seaborn as sb
 from statistics import stdev
+import traceback
 
 file_list = os.listdir('C:\\Users\\nonie\\Documents\\clustEHR\\run_through\\')
 
@@ -130,10 +131,23 @@ def read_thing(file):
     ds = re.sub('_2.*', '', file)
     if os.path.isfile('C:\\Users\\nonie\\Documents\\clustEHR\\run_through\\' + file + '\\' + ds + 'clean.csv'):
         df = pd.read_csv('C:\\Users\\nonie\\Documents\\clustEHR\\run_through\\' + file + '\\' + ds + 'clean.csv')
-        return(df)
+    return(df)
 
 disease_list = [read_thing(file) for file in new_file_list]
 
 disease_list = [df.drop('Unnamed: 0', axis = 1) for df in disease_list]
 
 disease_list = disease_list + df_list
+
+def full_test(disease):
+    try:
+        test = generate_data(100, 4, disease, vars=None, noise_var_ratio=None, var_n=100, description=True,
+                  seperation=None, priority='var_n', out_file='./test', export=False, verbose=True)
+    except Exception:
+        test = traceback.format_exc()
+
+    return(test)
+
+test_results = {i: full_test(i) for i in module_list2}
+test_good = {k:v for k,v in test_results.items() if type(v) == pd.core.frame.DataFrame}
+test_bad = {k:v for k,v in test_results.items() if type(v) != pd.core.frame.DataFrame}

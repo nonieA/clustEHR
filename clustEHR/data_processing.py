@@ -96,8 +96,8 @@ def data_clean(df,
 
 
 
-    def zero_sel(df, column, zero_rat, type = 'zero'):
-        if type == 'zero':
+    def zero_sel(df, column, zero_rat, z_type = 'zero'):
+        if z_type == 'zero':
             z_count = len(df[df[column] == 0])
         else:
             z_count = df[column].isna().sum()
@@ -110,7 +110,7 @@ def data_clean(df,
             return(False)
 
     zero_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat) == True]
-    na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat, type = 'na') == True]
+    na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat, z_type = 'na') == True]
     df_alt = df_alt.drop(zero_drop + na_drop, axis = 1)
 
     if outcome == 'auto':
@@ -125,7 +125,9 @@ def data_clean(df,
     df_y.loc[:,'code'] = df_y.code.replace(df_y.code.unique(),range(df_y.code.nunique()))
     df_out = df_alt[['PATIENT'] + outcome]
     df_X = df_alt.drop(y_var + outcome, axis = 1)
-
+    df_X['MARITAL'] = df_X['MARITAL'].fillna('S')
+    nan_df = [i for i in df_X.columns.tolist() if df_X[i].isna().any() and df_X[i].dtype == 'float' ]
+    df_X[nan_df] = df_X[nan_df].apply(lambda x: x.fillna(x.mean()), axis = 0 )
     OHE = OneHotEncoder(handle_unknown='ignore')
     hot = OHE.fit_transform(df_X.select_dtypes(include=['object']).drop(columns = 'PATIENT')).toarray()
     hot = pd.DataFrame(hot).rename(columns=lambda x: OHE.get_feature_names()[x])
@@ -136,7 +138,7 @@ def data_clean(df,
 
 def var_count_sorter(var_count_df):
     var_count_df['dif'] = var_count_df.type - var_count_df.fin_row_counts
-    if var_count_df.index.names == ['noise','type']:
+    if 'MultiIndex' in str(type(var_count_df.index)) :
         dif_indx = var_count_df.loc[var_count_df['dif'] < 0, :].index.tolist()[0]
         var_count_df.index.rename(['noise','var'], inplace = True)
         var_count_df.reset_index(inplace = True)
@@ -167,7 +169,11 @@ def var_count_sorter(var_count_df):
 
 
 def var_ratio_returner(importance,var_n, noise_var_ratio, priority):
-    var_counter = pd.DataFrame(importance.groupby('noise').type.value_counts())
+    indexes1 = [i for i in ['feature','noise'] for j in noise_var_ratio[0]]
+    indexes2 = [j for i in noise_var_ratio for j in ['cont','bin','cat'][:len(noise_var_ratio[0])]]
+    var_counter_ex = pd.DataFrame(importance.groupby('noise').type.value_counts())
+    var_counter = pd.DataFrame(index = [indexes1,indexes2])
+    var_counter = pd.concat([var_counter, var_counter_ex], axis=1).fillna(0)
     var_counter['ratio'] = [i for lists in noise_var_ratio for i in lists]
     var_counter['div'] = round(var_counter.type / var_counter.ratio)
 
