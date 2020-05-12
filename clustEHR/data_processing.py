@@ -20,7 +20,7 @@ def _combine_disease_dfs(disease_list):
         if isinstance(x, pd.DataFrame):
             return(x)
         elif os.path.isfile(x) and '.csv' in  x:
-            return(pd.read_csv(x))
+            return(pd.read_csv(x).drop('Unnamed: 0', axis = 1))
         else:
             raise ValueError('There is a problem in that the input is neither a df or a directory to a df so please can you change that')
     def get_index(col_df):
