@@ -8,6 +8,8 @@ import data_processing as dp
 import noise_seperation as ns
 import datetime as dt
 import warnings
+import json
+
 def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                  priority = 'var_n' , out_file = os.getcwd() ):
     """
@@ -77,7 +79,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     if not (out_file[-1] == '\\' or out_file[-1] == '/'):
         out_file = out_file + '\\'
     # generate synthea data
-
+    date1 = str(dt.datetime.now().date())
     def one_dis(n, disease, seed, description, out_folder):
         date = str(dt.datetime.now().date())
         if description == False:
@@ -126,6 +128,28 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         df_X['PATIENT'] = outcomes['PATIENT']
         df_fin = df_X
 
+    def get_seed(dis):
+        file_name = (re.sub('\*', "", disease, count=0) +
+                     "_" +
+                     date1 +
+                     "_" +
+                     str(seed)+
+                     '\\setup.csv'
+                     )
+        full_file = out_file + file_name
+        di_set_up = pd.read_csv(full_file)
+        seed_range = [di_set_up.loc[0,'seed'], di_set_up.loc[0,'seed'] + di_set_up.loc[0,'count']]
+        return(seed_range)
+
+    seed_ranges = {i:get_seed(i) for i in clusters}
+
+    setup_dict = {'pats':n,
+                  'diseases': clusters,
+                  'vars': vars,
+                  'priority': priority,
+                  'var_types': var_count.to_dict(),
+                  'seed': seed_ranges }
+
 
     time = re.sub('\..*','',str(dt.datetime.now().time()))
     time = re.sub(':','-',time)
@@ -143,8 +167,13 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     df_y.to_csv(out_file + folder_name + '/labels.csv')
     outcomes.to_csv(out_file + folder_name + '/outcomes.csv')
     var_selector.to_csv(out_file + folder_name +'/varstypes.csv')
+    json = json.dumps(setup_dict)
+    f = open('setup_dict.json', 'w')
+    f.write(json)
+    f.close()
+
     return(df_fin)
-    # todo write meta
+
 
 
 

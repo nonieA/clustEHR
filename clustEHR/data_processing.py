@@ -128,6 +128,11 @@ def data_clean(df,
     df_X['MARITAL'] = df_X['MARITAL'].fillna('S')
     nan_df = [i for i in df_X.columns.tolist() if df_X[i].isna().any() and df_X[i].dtype == 'float' ]
     df_X[nan_df] = df_X[nan_df].apply(lambda x: x.fillna(x.mean()), axis = 0 )
+    cat_cols = df_X.select_dtypes(include = ['object']).columns.to_list()
+    df_X.loc[:,cat_cols] = (df_X.select_dtypes(include = ['object'])
+                            .apply(lambda x: x.replace(x.unique().tolist(),[0,1]) if len(x.unique()) == 2 else x,
+                                                                           axis = 0))
+
     OHE = OneHotEncoder(handle_unknown='ignore')
     hot = OHE.fit_transform(df_X.select_dtypes(include=['object']).drop(columns = 'PATIENT')).toarray()
     hot = pd.DataFrame(hot).rename(columns=lambda x: OHE.get_feature_names()[x])
