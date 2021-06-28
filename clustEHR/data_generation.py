@@ -47,7 +47,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
      'cystic_fibrosis': ['Female Infertility', 'Cystic Fibrosis', 'Diabetes from Cystic Fibrosis',
                          'Infection caused by Staphylococcus aureus',
                          'Sepsis caused by Staphylococcus aureus'],
-     'dementia': ["Alzheimer's disease (disorder)"],
+     'dementia': ["Alzheimer's disease (disorder)","Familial Alzheimer's disease of early onset (disorder)"],
      'dermatitis': ['Contact dermatitis', 'Atopic dermatitis'],
      'ear_infections': ['Otitis media'],
      'epilepsy': ['Seizure disorder', 'History of single seizure (situation)', 'Epilepsy'],
@@ -186,7 +186,7 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
      'cystic_fibrosis': ['Female Infertility', 'Cystic Fibrosis', 'Diabetes from Cystic Fibrosis',
                          'Infection caused by Staphylococcus aureus',
                          'Sepsis caused by Staphylococcus aureus'],
-     'dementia': ["Alzheimer's disease (disorder)"],
+     'dementia': ["Alzheimer's disease (disorder)","Familial Alzheimer's disease of early onset (disorder)"],
      'dermatitis': ['Contact dermatitis', 'Atopic dermatitis'],
      'ear_infections': ['Otitis media'],
      'epilepsy': ['Seizure disorder', 'History of single seizure (situation)', 'Epilepsy'],
@@ -402,7 +402,7 @@ def full_out(disease, df_list, description = False, write_out = False):
         'cystic_fibrosis': ['Female Infertility', 'Cystic Fibrosis', 'Diabetes from Cystic Fibrosis',
                          'Infection caused by Staphylococcus aureus',
                          'Sepsis caused by Staphylococcus aureus'],
-        'dementia': ["Alzheimer's disease (disorder)"],
+        'dementia': ["Alzheimer's disease (disorder)","Familial Alzheimer's disease of early onset (disorder)"],
         'dermatitis': ['Contact dermatitis', 'Atopic dermatitis'],
         'ear_infections': ['Otitis media'],
         'epilepsy': ['Seizure disorder', 'History of single seizure (situation)', 'Epilepsy'],
@@ -647,17 +647,17 @@ def full_out(disease, df_list, description = False, write_out = False):
                .pivot_table(index= 'PATIENT',columns='DISEASES',values='VALUE',fill_value=0)
                .reset_index())
     col_dict['cond_cols'] = list(cond_df.drop(columns='PATIENT').columns)
-    for i in [cond_df, df_list['procedures'], df_list['encounters'], df_list['medications']]:
-        for j in ['before', 'after']:
+    proc_df = df_list['procedures']
+    proc_df = _var_counter(proc_df,onset_df,timing = '')
+    col_dict['proc_cols'] = list(proc_df.drop(columns='PATIENT').columns)
+    med_df = df_list['medications']
+    med_df = med_df[med_df['REASONDESCRIPTION'].isin(condits +[disease])]
+    med_df = _var_counter(med_df,onset_df,timing='')
+    col_dict['med_cols'] = list(med_df.drop(columns='PATIENT').columns)
+    for i in [cond_df, med_df,proc_df]:
+        if len(i) > 0:
+            df = pd.merge(df, i, how = 'left', on = 'PATIENT')
 
-            x = _var_counter(i, onset_df, timing = j)
-            if len(x) > 0:
-                df = pd.merge(df, x, how = 'left', on = 'PATIENT')
-
-    new_cols = [i for i in df.columns.tolist() if i not in current_cols]
-    df[new_cols] =(df[new_cols]
-                   .fillna(0)
-                   .apply(lambda x: x.astype('int') , axis = 0))
 
     if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
@@ -704,3 +704,5 @@ if __name__ =='__main__':
     extra_conds_dict = {}
     for i in new_conds['Category'].unique():
         extra_conds_dict[i] = new_conds[new_conds['Category'] == i]['DESCRIPTION'].to_list()
+    thing = 1
+
