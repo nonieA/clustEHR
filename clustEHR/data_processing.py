@@ -23,41 +23,22 @@ def _combine_disease_dfs(disease_list):
             return(pd.read_csv(x).drop('Unnamed: 0', axis = 1))
         else:
             raise ValueError('There is a problem in that the input is neither a df or a directory to a df so please can you change that')
-    def get_index(col_df):
-        drug_indx = [col_df.columns.get_loc(i) for i in col_df.columns if 'before' in i]
-        stop = [drug_indx[i] for i in range(1, len(drug_indx)) if drug_indx[i] - drug_indx[(i - 1)] > 1]
-        return(stop[-1])
 
     df_disease_list = [list_checker(i) for i in disease_list]
-    int_cols = [df.select_dtypes(include = 'int64').columns.tolist() for df in df_disease_list]
-    int_cols = [j for i in int_cols for j in i]
 
     df = pd.concat(df_disease_list, sort=False)
     df = df.replace([np.inf, -np.inf], np.nan)
-    df[int_cols] = (df[int_cols]
-                   .fillna(0)
-                   .apply(lambda x: x.astype('int'), axis = 0))
 
-    concat_dict = {x.DISEASE[1]:x.iloc[:,get_index(x):].columns.tolist() for x in df_disease_list}
-    unique_drug_list = [j for i in concat_dict.values() for j in i]
-    unique_drug_list = [i for i in unique_drug_list if unique_drug_list.count(i) == 1]
-    def get_unique(drug_list, string,):
-        return([i for i in drug_list if i in unique_drug_list and string in i])
+    return df
 
-    drug_bf = {k + '_drugs_before':get_unique(v,'before') for k,v in concat_dict.items()}
-    drug_aft = {k + '_drugs_after':get_unique(v,'after') for k,v in concat_dict.items()}
-    concat_dict = {**drug_bf,
-                   **drug_aft,
-                   'encounters_aft': ['Emergency Encounterafter', 'Encounter for check up (procedure)after',
-                                      'Encounter for problemafter', 'Encounter for problem (procedure)after',
-                                      'General examination of patient (procedure)after'],
-                   'encounters_bf': ['Emergency Encounterafter', 'Encounter for check up (procedure)after',
-                                     'Encounter for problemafter', 'Encounter for problem (procedure)after',
-                                     'General examination of patient (procedure)after']
-                   }
-
-    return(df,concat_dict)
-
+def find_cols(cat,var):
+    col_list = [set(i[cat]) for i in col_dict_list]
+    col_list = [j for i in col_list for j in i]
+    df_break = [df[df['DISEASE'] == i] for i in df['DISEASE'].unique()]
+    if ((col_list.count(var) >= len(col_dict_list)) and all(len(i[var].dropna()) > 0 for i in df_break)):
+        return True
+    else:
+        return False
 
 def data_clean(df,
                y_var = ['DISEASE'],
@@ -67,51 +48,10 @@ def data_clean(df,
                zero_rat = 0.9,
                drop_list = ['START', 'ETHNICITY']):
 
+    obvs_num_cols = [j for i in col_dict_list for j in i['obvs_num'] if find_cols('obvs_num',j)]
 
-    df_alt = df.copy()
-    df_alt = df_alt.drop(drop_list, axis = 1)
-
-    if mult_imps == 'auto':
-        mult_imps = ['DALY_FIRST', 'QALY_FIRST', 'QOL_FIRST', 'DALY_RATE', 'QALY_RATE',
-                     'QOL_RATE']
-
-    df_imps = df_alt[mult_imps]
-    imp = IterativeImputer(max_iter = 100)
-    df_imps = imp.fit_transform(df_imps)
-    df_imps = pd.DataFrame(df_imps, columns = mult_imps ).reset_index( drop = True)
-
-    df_alt = df_alt.drop(mult_imps, axis = 1)
-    df_alt = pd.concat([df_alt.reset_index(drop = True), df_imps],  axis = 1 )
-
-    def column_check(columns, comb_list):
-        return([i for i in comb_list if i in columns])
-
-    if comb != None:
-        comb = {k:column_check(df_alt.columns,v) for (k,v) in comb.items()}
-        comb_dict2 = {k: df[comb.get(k)].sum(axis=1) for k in comb}
-        comb_dict2 = pd.DataFrame(comb_dict2).reset_index(drop=True)
-        drop_cols = sum(comb.values(), [])
-
-    df_alt = df_alt.drop(columns = drop_cols).join(comb_dict2)
-
-
-
-    def zero_sel(df, column, zero_rat, z_type = 'zero'):
-        if z_type == 'zero':
-            z_count = len(df[df[column] == 0])
-        else:
-            z_count = df[column].isna().sum()
-        if z_count == 0:
-            return(False)
-        count = len(df)
-        if z_count/count > zero_rat:
-            return(True)
-        else:
-            return(False)
-
-    zero_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat) == True]
-    na_drop = [i for i in df_alt.columns.tolist() if zero_sel(df_alt,i,zero_rat, z_type = 'na') == True]
-    df_alt = df_alt.drop(zero_drop + na_drop, axis = 1)
+    obvs_num_df =
+    cond_cols =
 
     if outcome == 'auto':
         outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
