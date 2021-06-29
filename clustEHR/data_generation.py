@@ -646,6 +646,8 @@ def full_out(disease, df_list, description = False, write_out = False):
     cond_df = (cond_df[['PATIENT','DISEASES','VALUE']].drop_duplicates(subset = ['PATIENT','DISEASES'])
                .pivot_table(index= 'PATIENT',columns='DISEASES',values='VALUE',fill_value=0)
                .reset_index())
+
+    cond_df = cond_df.drop(columns = disease)
     col_dict['cond_cols'] = list(cond_df.drop(columns='PATIENT').columns)
     proc_df = df_list['procedures']
     proc_df = _var_counter(proc_df,onset_df,timing = '')
@@ -661,7 +663,7 @@ def full_out(disease, df_list, description = False, write_out = False):
 
     if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
-    return (df)
+    return df,col_dict
 
 def _remove_files(path):
     """
@@ -695,14 +697,11 @@ if __name__ =='__main__':
         raise ValueError('so the disease input doesnt link to a module')
 
     df_list = _read_files('dementia_2021-06-28_4',200,out_file='trial_data/')
-    conds_df = pd.read_csv('trial_data/big_data/csv/conditions.csv')
-    conds_df = conds_df.drop_duplicates('DESCRIPTION')
-    values = set([j for i in conditions.values() for j in i])
-    conds_df = conds_df[~conds_df['DESCRIPTION'].isin(values) ]
-    conds_df.to_csv('added_conditions.csv')
-    new_conds = pd.read_csv('new_conditions.csv')
-    extra_conds_dict = {}
-    for i in new_conds['Category'].unique():
-        extra_conds_dict[i] = new_conds[new_conds['Category'] == i]['DESCRIPTION'].to_list()
-    thing = 1
-
+    df, col_dict = full_out('dementia',df_list)
+    df_list1 = _read_files('colorectal_cancer_2021-06-28_4',200,out_file='trial_data/')
+    df1,col_dict1 = full_out('colorectal_cancer',df_list1)
+    df_list = _read_files('copd_2021-06-28_3',50,description=True,out_file='trial_data/')
+    disease = 'copd'
+    description = True
+    comb_list = [df,df1]
+    col_dict_list = [col_dict,col_dict1]
