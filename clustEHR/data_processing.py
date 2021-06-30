@@ -1,16 +1,17 @@
 """
 Takes multiple disease DFs and processes them to make one clusterable dataset
 """
+import re
+
 import pandas as pd
 import os
 import numpy as np
-from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
+from sklearn.impute import KNNImputer
 from sklearn.preprocessing import OneHotEncoder
 import random
 import warnings
 
-def _combine_disease_dfs(disease_list):
+def _combine_disease_dfs(disease_list,description=False):
     """
     takes individiul diseases and makes them one dataset
     :param disease_list: list of pd.dfs or file paths
@@ -26,7 +27,13 @@ def _combine_disease_dfs(disease_list):
 
     df_disease_list = [list_checker(i) for i in disease_list]
 
-    df = pd.concat(df_disease_list, sort=False)
+    if description:
+        df = df_disease_list[0]
+    else:
+        df = pd.concat(df_disease_list, sort=False)
+        for i in df['DISEASE'].unique().tolist():
+            if i in df.columns:
+                df.drop(columns = i)
     df = df.replace([np.inf, -np.inf], np.nan)
 
     return df
@@ -40,44 +47,79 @@ def find_cols(cat,var):
     else:
         return False
 
-def data_clean(df,
-               y_var = ['DISEASE'],
-               mult_imps = 'auto',
-               comb = None,
-               outcome = 'auto',
-               zero_rat = 0.9,
-               drop_list = ['START', 'ETHNICITY']):
 
-    obvs_num_cols = [j for i in col_dict_list for j in i['obvs_num'] if find_cols('obvs_num',j)]
+def imputer(imp_df):
+    imp = KNNImputer()
+    out_df = imp.fit_transform(imp_df)
+    out_df = pd.DataFrame(out_df, columns=imp_df.columns)
+    return out_df
 
-    obvs_num_df =
-    cond_cols =
+def get_cat_df(cat,description):
+    if description:
+        cat_cols = [j for i in col_dict_list for j in i[cat] if (len(df[df[j] > 0]) / len(df)) >= 0.4]
+    else:
+        cat_cols = [j for i in col_dict_list for j in i[cat] if (find_cols(cat,j)and((len(df[df[j]>0])/len(df))>= 0.4))]
+    cat_df = df[cat_cols]
+    cat_df = cat_df.fillna(0)
+    return cat_df.reset_index(drop = True)
 
-    if outcome == 'auto':
-        outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
-                   list(df_alt.filter(regex = 'aft').columns) +
-                   list(df_alt.filter(regex = 'RATE').columns))
+def col_name_change(col_name):
+    col_short = re.sub('.*_','',col_name)
+    col_idx = re.sub('_.*','',col_name)
+    col_idx = int(re.sub('x','',col_idx))
+    cat_list = list(name_dict.keys())
+    return cat_list[col_idx] + '_' + col_short
+
+def data_clean(df,col_dict_list,description = False):
 
 
+    pats_df = df[['PATIENT', 'DISEASE', 'ONSET_AGE', 'DEATH_AGE', 'YEARS_TO_DEATH',]].reset_index(drop = True)
 
-    df_y = df_alt[['PATIENT'] + y_var]
-    df_y['code'] = df_alt[y_var].copy()
-    df_y.loc[:,'code'] = df_y.code.replace(df_y.code.unique(),range(df_y.code.nunique()))
-    df_out = df_alt[['PATIENT'] + outcome]
-    df_X = df_alt.drop(y_var + outcome, axis = 1)
-    df_X['MARITAL'] = df_X['MARITAL'].fillna('S')
-    nan_df = [i for i in df_X.columns.tolist() if df_X[i].isna().any() and df_X[i].dtype == 'float' ]
-    df_X[nan_df] = df_X[nan_df].apply(lambda x: x.fillna(x.mean()), axis = 0 )
-    cat_cols = df_X.select_dtypes(include = ['object']).columns.to_list()
-    df_X.loc[:,cat_cols] = (df_X.select_dtypes(include = ['object'])
-                            .apply(lambda x: x.replace(x.unique().tolist(),[0,1]) if len(x.unique()) == 2 else x,
-                                                                           axis = 0))
-
+    one_hot = df[['MARITAL', 'RACE', 'GENDER']]
+    one_hot['MARITAL'] = one_hot['MARITAL'].fillna('S')
     OHE = OneHotEncoder(handle_unknown='ignore')
-    hot = OHE.fit_transform(df_X.select_dtypes(include=['object']).drop(columns = 'PATIENT')).toarray()
+    hot = OHE.fit_transform(one_hot).toarray()
     hot = pd.DataFrame(hot).rename(columns=lambda x: OHE.get_feature_names()[x])
-    df_X = df_X.reset_index(drop=True)
-    df_X = pd.concat([df_X, hot], axis=1)   .select_dtypes(exclude=['object'])
+    name_dict = {i[0]: i[1].unique().tolist() for i in one_hot.iteritems()}
+    hot = hot.rename(columns = col_name_change)
+    hot_drop_cols = [k + '_' + v[1] for k,v in name_dict.items() if len(v) == 2]
+    hot = hot.drop(columns=hot_drop_cols)
+    pats_df = pd.concat([pats_df,hot],axis = 1)
+
+    obvs_num_cols = [j for i in col_dict_list
+                     for j in i['obvs_num'] if (find_cols('obvs_num',j) and (len(df[j].dropna())/len(df) >= 0.4) )]
+
+    obvs_num_df = df[obvs_num_cols]
+    df_break = [obvs_num_df[df['DISEASE'] == i] for i in df['DISEASE'].unique()]
+    imp_list = [imputer(i) for i in df_break]
+    obvs_num_df = pd.concat(imp_list).reset_index(drop = True)
+
+    if description:
+        med_df = get_cat_df('med_cols',description)
+    else:
+        med_dict = {}
+        for i in range(len(col_dict_list)):
+            med_cols = col_dict_list[i]['med_cols']
+            sml_med_df = df[med_cols].fillna(0)
+            dis_name = df['DISEASE'].unique()[i]
+            med_dict[dis_name + '_medication'] = sml_med_df.sum(axis = 1).tolist()
+        med_df = pd.DataFrame(med_dict)
+
+    changed_df = [pats_df,med_df,obvs_num_df] + [get_cat_df(i,description) for i in ['obvs_bin', 'cond_cols','proc_cols']]
+
+    full_df = pd.concat(changed_df,axis = 1)
+
+
+    outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
+               list(full_df.filter(regex = 'RATE').columns))
+
+
+
+    df_y = full_df[['PATIENT','DISEASE']]
+    df_y['code'] = full_df['DISEASE'].copy()
+    df_y.loc[:,'code'] = df_y.code.replace(df_y.code.unique(),range(df_y.code.nunique()))
+    df_out = full_df[['PATIENT'] + outcome]
+    df_X = full_df.drop(['DISEASE'] + outcome, axis = 1)
 
     return(df_X, df_y, df_out)
 
@@ -165,3 +207,6 @@ def var_getter(var_counter_fin,importance):
     return(var_list)
 
 
+if __name__ == '__main__':
+    df = _combine_disease_dfs(disease_list)
+    df_X,df_y,outcomes = data_clean(df,col_dict_list)

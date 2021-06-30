@@ -705,3 +705,6 @@ if __name__ =='__main__':
     description = True
     disease_list = [df,df1]
     col_dict_list = [col_dict,col_dict1]
+    df, col_dict = full_out('copd',df_list,description=True)
+    df_list = [df]
+    col_dict_list = [col_dict]
