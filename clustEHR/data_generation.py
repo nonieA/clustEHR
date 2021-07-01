@@ -703,5 +703,8 @@ if __name__ =='__main__':
     df_list = _read_files('copd_2021-06-28_3',50,description=True,out_file='trial_data/')
     disease = 'copd'
     description = True
-    comb_list = [df,df1]
+    disease_list = [df,df1]
     col_dict_list = [col_dict,col_dict1]
+    df, col_dict = full_out('copd',df_list,description=True)
+    df_list = [df]
+    col_dict_list = [col_dict]
