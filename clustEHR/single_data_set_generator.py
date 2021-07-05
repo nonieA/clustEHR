@@ -26,18 +26,18 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     """
     module_list = ['appendicitis',
                    'asthma*',
-                   'breast_cancer*',
-                   'bronchitis*',
-                   'colorectal_cancer*',
+                   'breast_cancer',
+                   'bronchitis',
+                   'colorectal_cancer',
                    'copd',
                    'cystic_fibrosis',
                    'dementia',
-                   'dermatitis*',
+                   'dermatitis',
                    'epilepsy',
-                   'fibromyalgia*',
+                   'fibromyalgia',
                    'gallstones',
                    'gout',
-                   'hypothyroidism*',
+                   'hypothyroidism',
                    'lung_cancer',
                    'lupus',
                    'osteoarthritis',
@@ -47,10 +47,10 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     desc_true_list = ['asthma',
                    'copd',
                    'dementia',
-                   'dermatitis*',
-                   'osteoarthritis*',
-                   'osteoporosis*',
-                   'rheumatoid_arthritis*',
+                   'dermatitis',
+                   'osteoarthritis',
+                   'osteoporosis',
+                   'rheumatoid_arthritis',
                    'urinary_tract_infections']
     # sorting life out if statements
     if description == True and isinstance(clusters,str):
@@ -86,7 +86,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
             dg._disease_counter(n,disease, seed, out_folder)
         else:
             dg._disease_counter_1d(n, disease,seed, out_folder)
-        file_name = (re.sub('\*',"",disease, count = 0) +
+        file_name = (disease +
                     "_" +
                     date +
                     "_" +
@@ -94,19 +94,19 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                     )
 
         file_list = dg._read_files(file_name,n = n, description = description, out_file= out_folder)
-        disease_cut = re.sub('\*','',disease)
-        df = dg.full_out(disease_cut,
+        df = dg.full_out(disease,
                          df_list = file_list,
                          description = description,
                          write_out = (out_folder + file_name + '/'))
         dg._remove_files(out_file + file_name + '/')
         return(df)
 
-    disease_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file) for i in range(len(n))]
+    full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file) for i in range(len(n))]
+    disease_list = [i[0] for i in full_list]
+    col_dict_list = [i[1] for i in full_list]
 
-
-    comb_df, excepts = dp._combine_disease_dfs(disease_list)
-    df_X, df_y, outcomes = dp.data_clean(comb_df, comb = excepts)
+    comb_df = dp._combine_disease_dfs(disease_list,description=description)
+    df_X, df_y, outcomes = dp.data_clean(comb_df,col_dict_list,description=description)
 
     if vars == None:
         if len(noise_var_ratio[0]) == 3:
@@ -129,7 +129,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         df_fin = df_X
 
     def get_seed(dis):
-        file_name = (re.sub('\*', "", disease, count=0) +
+        file_name = disease +
                      "_" +
                      date1 +
                      "_" +
