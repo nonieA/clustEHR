@@ -1,0 +1,32 @@
+{
+	"data_sets":5,
+	"n":[[300,100],[200,400,50],[100,50,500,300],[200,100,50,250,400],[100,200,300,400,50,500]],
+	"seed":[2,6],
+	"clusters":[2,6],
+	"vars":null,
+	"noise_var_ratio":[
+	{
+		"feature":{
+			"binary":1,
+			"continous":1
+		},
+		"noise":{
+			"binary":1,
+			"continous":1
+		}
+	},
+	{
+		"feature":{
+			"binary":5,
+			"continous":5
+		},
+		"noise":{
+			"binary":0,
+			"continous":0
+		}
+	}],
+	"var_n":50,
+	"description":true,
+	"priority":"noise_var_ratio",
+	"out_file":"test/unequal_true"
+}

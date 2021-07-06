@@ -25,7 +25,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     :return: 1 cluster test data set
     """
     module_list = ['appendicitis',
-                   'asthma*',
+                   'asthma',
                    'breast_cancer',
                    'bronchitis',
                    'colorectal_cancer',
@@ -129,7 +129,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         df_fin = df_X
 
     def get_seed(dis):
-        file_name = disease +
+        file_name = (disease +
                      "_" +
                      date1 +
                      "_" +

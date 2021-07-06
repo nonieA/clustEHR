@@ -71,7 +71,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
                                   'Escherichia coli urinary tract infection']
      }
 
-    condits = conditions[re.sub('\*','',disease)]
+    condits = conditions[disease]
 
 
 
@@ -84,7 +84,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
 
     file_out = (out_folder+
                 '/' +
-                re.sub('\*',"",disease, count = 0) +
+                disease +
                 "_" +
                 str(dt.datetime.now().date()) +
                 "_" +
@@ -138,7 +138,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     # setting up config file
 
     set_up = pd.DataFrame({"n": str(n),
-              "disease": re.sub('\*', "", disease, count=0),
+              "disease": disease,
               "seed": str(seed),
               "count": str(count),
               "pats_n": str(npats)},
@@ -210,7 +210,7 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
                                   'Escherichia coli urinary tract infection']
      }
 
-    condits = conditions[re.sub('\*','',disease)]
+    condits = conditions[disease]
 
     seed_str = str(seed)
     p = "2000"
@@ -221,7 +221,7 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
 
     file_out = (out_folder+
                 '/' +
-                re.sub('\*',"",disease, count = 0) +
+                disease +
                 "_" +
                 str(dt.datetime.now().date()) +
                 "_" +
@@ -294,7 +294,7 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
     # setting up config file
 
     set_up = pd.DataFrame({"n": str(n),
-              "disease": re.sub('\*', "", disease, count=0),
+              "disease":  disease,
               "seed": str(seed),
               "count": str(count),
               "pats_n": str(npats)},

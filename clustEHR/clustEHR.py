@@ -1,5 +1,5 @@
 import json
-import os.path
+import os
 
 from single_data_set_generator import generate_data
 import pandas as pd
@@ -31,7 +31,7 @@ def sort_noise(noise_list,sets):
             'noise':{
                 j:1 for j in first_noise['feature'].keys()
             }
-        } for i in range(len(rat_dict['binary']))]
+        } for i in range(len(rat_dict['binary_rat']))]
 
         return final_dict
     else:
@@ -42,8 +42,8 @@ def sort_noise(noise_list,sets):
         }
 
         final_dict = [{
-            j:{k:rat_dict[k][i] for k in first_noise[j].keys()} for j in first_noise.keys()
-        } for i in range(len(rat_dict['binary']))]
+            j:{k:rat_dict[j][k][i] for k in first_noise[j].keys()} for j in first_noise.keys()
+        } for i in range(len(rat_dict['feature']))]
 
         return final_dict
 
@@ -74,6 +74,8 @@ def clean_config(config_file):
     sets = config_file['data_sets']
     new_dict = {k:sort_config_list(v,sets) for k,v in config_file.items() if k not in ['data_sets','noise_var_ratio']}
     new_dict['noise_var_ratio'] = sort_noise_full(config_file['noise_var_ratio'],sets)
+    new_dict['clusters'] = [int(i) for i in new_dict['clusters'] if isinstance(i,float)]
+    new_dict['seed'] = [int(i) for i in new_dict['seed'] if isinstance(i, float)]
     return new_dict
 
 
@@ -92,10 +94,17 @@ def clustEHR(config_file):
         var_n= config_two['var_n'][i],
         description= config_two['description'][i],
         priority = config_two['priority'][i],
-        out_file = config_two['out_file'][i] )   for i in range(config_file['sets'])]
+        out_file = config_two['out_file'][i] )   for i in range(config_file['data_sets'])]
     return df
 
 if __name__ == '__main__':
+    os.chdir('../')
+    file_list = os.listdir('test')
+    dict_list = []
 
-    with open('test_config.json') as f:
-        config_file = json.load(f)
+    for i in file_list:
+        with open('test/' +i) as f:
+            new_dict = json.load(f)
+            dict_list.append(new_dict)
+
+    df_list = [clustEHR(i) for i in dict_list]
