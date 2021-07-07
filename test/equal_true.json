@@ -1,0 +1,32 @@
+{
+	"data_sets":5,
+	"n":300,
+	"seed":[2,6],
+	"clusters":[2,6],
+	"vars":null,
+	"noise_var_ratio":[
+	{
+		"feature":{
+			"binary":1,
+			"continous":1
+		},
+		"noise":{
+			"binary":1,
+			"continous":1
+		}
+	},
+	{
+		"feature":{
+			"binary":5,
+			"continous":5
+		},
+		"noise":{
+			"binary":0,
+			"continous":0
+		}
+	}],
+	"var_n":100,
+	"description":true,
+	"priority":"noise_var_ratio",
+	"out_file":"test/equal_true"
+}
