@@ -1,6 +1,7 @@
 """
 Functions for generating and cleaning synthea data for one disease
 """
+import json
 
 import pandas as pd
 import numpy as np
@@ -148,6 +149,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
 
     np.savetxt((file_out + "/patstest.txt"),pats, delimiter = ",", fmt = "%s")
     set_up.to_csv((file_out + "/setup.csv"))
+
 
 def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
     """
@@ -663,6 +665,8 @@ def full_out(disease, df_list, description = False, write_out = False):
 
     if write_out != False:
         df.to_csv(write_out + disease + 'clean.csv')
+        with open(write_out + disease + "col_dict.json", "w") as f:
+            json.dump(col_dict,f)
     return df,col_dict
 
 def _remove_files(path):

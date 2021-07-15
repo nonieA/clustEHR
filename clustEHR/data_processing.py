@@ -1,6 +1,7 @@
 """
 Takes multiple disease DFs and processes them to make one clusterable dataset
 """
+import json
 import re
 
 import pandas as pd
@@ -38,7 +39,7 @@ def _combine_disease_dfs(disease_list,description=False):
 
     return df
 
-def find_cols(cat,var):
+def find_cols(cat,var,col_dict_list,df):
     col_list = [set(i[cat]) for i in col_dict_list]
     col_list = [j for i in col_list for j in i]
     df_break = [df[df['DISEASE'] == i] for i in df['DISEASE'].unique()]
@@ -54,16 +55,16 @@ def imputer(imp_df):
     out_df = pd.DataFrame(out_df, columns=imp_df.columns)
     return out_df
 
-def get_cat_df(cat,description):
+def get_cat_df(cat,description,col_dict_list,df):
     if description:
         cat_cols = [j for i in col_dict_list for j in i[cat] if (len(df[df[j] > 0]) / len(df)) >= 0.4]
     else:
-        cat_cols = [j for i in col_dict_list for j in i[cat] if (find_cols(cat,j)and((len(df[df[j]>0])/len(df))>= 0.4))]
+        cat_cols = set([j for i in col_dict_list for j in i[cat] if (find_cols(cat,j,col_dict_list,df)and((len(df[df[j]>0])/len(df))>= 0.4))])
     cat_df = df[cat_cols]
     cat_df = cat_df.fillna(0)
     return cat_df.reset_index(drop = True)
 
-def col_name_change(col_name):
+def col_name_change(col_name,name_dict):
     col_short = re.sub('.*_','',col_name)
     col_idx = re.sub('_.*','',col_name)
     col_idx = int(re.sub('x','',col_idx))
@@ -81,13 +82,13 @@ def data_clean(df,col_dict_list,description = False):
     hot = OHE.fit_transform(one_hot).toarray()
     hot = pd.DataFrame(hot).rename(columns=lambda x: OHE.get_feature_names()[x])
     name_dict = {i[0]: i[1].unique().tolist() for i in one_hot.iteritems()}
-    hot = hot.rename(columns = col_name_change)
+    hot = hot.rename(columns = lambda x: col_name_change(x,name_dict))
     hot_drop_cols = [k + '_' + v[1] for k,v in name_dict.items() if len(v) == 2]
     hot = hot.drop(columns=hot_drop_cols)
     pats_df = pd.concat([pats_df,hot],axis = 1)
 
-    obvs_num_cols = [j for i in col_dict_list
-                     for j in i['obvs_num'] if (find_cols('obvs_num',j) and (len(df[j].dropna())/len(df) >= 0.4) )]
+    obvs_num_cols = set([j for i in col_dict_list
+                     for j in i['obvs_num'] if (find_cols('obvs_num',j,col_dict_list,df) and (len(df[j].dropna())/len(df) >= 0.4) )])
 
     obvs_num_df = df[obvs_num_cols]
     df_break = [obvs_num_df[df['DISEASE'] == i] for i in df['DISEASE'].unique()]
@@ -95,7 +96,7 @@ def data_clean(df,col_dict_list,description = False):
     obvs_num_df = pd.concat(imp_list).reset_index(drop = True)
 
     if description:
-        med_df = get_cat_df('med_cols',description)
+        med_df = get_cat_df('med_cols',description,col_dict_list,df)
     else:
         med_dict = {}
         for i in range(len(col_dict_list)):
@@ -105,10 +106,9 @@ def data_clean(df,col_dict_list,description = False):
             med_dict[dis_name + '_medication'] = sml_med_df.sum(axis = 1).tolist()
         med_df = pd.DataFrame(med_dict)
 
-    changed_df = [pats_df,med_df,obvs_num_df] + [get_cat_df(i,description) for i in ['obvs_bin', 'cond_cols','proc_cols']]
+    changed_df = [pats_df,med_df,obvs_num_df] + [get_cat_df(i,description,col_dict_list,df) for i in ['obvs_bin', 'cond_cols','proc_cols']]
 
     full_df = pd.concat(changed_df,axis = 1)
-
 
     outcome = (['DEATH_AGE', 'YEARS_TO_DEATH'] +
                list(full_df.filter(regex = 'RATE').columns))
@@ -208,5 +208,16 @@ def var_getter(var_counter_fin,importance):
 
 
 if __name__ == '__main__':
+
+    df_1 = pd.read_csv('test/copd_2021-07-15_4/copdclean.csv')
+    df_2 = pd.read_csv('test/dementia_2021-07-15_4/dementiaclean.csv')
+    disease_list = [df_1,df_2]
+    with open('test/copd_2021-07-15_4/copdcol_dict.json') as f:
+        copd_col_dict = json.load(f)
+
+    with open('test/dementia_2021-07-15_4/dementiacol_dict.json') as f:
+        dem_col_dict = json.load(f)
+
+    col_dict_list = [copd_col_dict,dem_col_dict]
     df = _combine_disease_dfs(disease_list)
     df_X,df_y,outcomes = data_clean(df,col_dict_list)

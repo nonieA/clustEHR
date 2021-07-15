@@ -3,9 +3,9 @@ import os
 import re
 import numpy as np
 import random
-import data_generation as dg
-import data_processing as dp
-import noise_seperation as ns
+import clustEHR.data_generation as dg
+import clustEHR.data_processing as dp
+import clustEHR.noise_seperation as ns
 import datetime as dt
 import warnings
 import json
@@ -53,9 +53,11 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                    'rheumatoid_arthritis',
                    'urinary_tract_infections']
     # sorting life out if statements
+    random.seed(seed)
     if description == True and isinstance(clusters,str):
         clusters = [clusters]
     if description == True and isinstance(clusters,int):
+
         clusters = random.sample(desc_true_list,1)
     if not (isinstance(clusters, int) or (isinstance(clusters, list) and isinstance(clusters[0], str))):
         raise ValueError('clusters needs to be either an int representing the number of clusters or a list of diseases')
@@ -128,7 +130,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         df_X['PATIENT'] = outcomes['PATIENT']
         df_fin = df_X
 
-    def get_seed(dis):
+    def get_seed(disease):
         file_name = (disease +
                      "_" +
                      date1 +
@@ -167,10 +169,9 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     df_y.to_csv(out_file + folder_name + '/labels.csv')
     outcomes.to_csv(out_file + folder_name + '/outcomes.csv')
     var_selector.to_csv(out_file + folder_name +'/varstypes.csv')
-    json = json.dumps(setup_dict)
-    f = open('setup_dict.json', 'w')
-    f.write(json)
-    f.close()
+    with open(out_file + folder_name +'/setup_dict.json','w') as j:
+        json.dump(setup_dict,j)
+
 
     return(df_fin)
 

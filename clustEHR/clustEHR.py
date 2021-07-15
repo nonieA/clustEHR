@@ -1,7 +1,7 @@
 import json
 import os
 
-from single_data_set_generator import generate_data
+from clustEHR.single_data_set_generator import generate_data
 import pandas as pd
 import numpy as np
 
@@ -98,7 +98,6 @@ def clustEHR(config_file):
     return df
 
 if __name__ == '__main__':
-    os.chdir('../')
     file_list = os.listdir('test')
     dict_list = []
 

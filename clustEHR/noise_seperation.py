@@ -22,7 +22,7 @@ def rf_noise(df_X,df_y,params = None, og_df = None):
 
     def rfor_imp(df_X, df_y):
         df_y = df_y.code
-        df_X = df_X
+        df_X = df_X.drop(columns= 'PATIENT')
         rfor = RandomForestClassifier(n_estimators=1000).fit(df_X, df_y).feature_importances_
         importance = pd.DataFrame({'vars': df_X.columns, 'importance': rfor})
         importance['rank'] = importance.importance.rank(ascending=False)
@@ -47,8 +47,7 @@ def rf_noise(df_X,df_y,params = None, og_df = None):
         importance['rank'] = importance.importance.rank(ascending=False)
         return(importance)
 
-    na_cols = [i for i in df_X.columns.to_list() if df_X[i].isnull().any()]
-    df_X.loc[:,na_cols] = df_X[na_cols].apply(lambda x: fill_in(df_y['code'],x),axis = 0)
+
     importance = rfor_imp(df_X,df_y)
     if og_df is not None:
         importance = de_hot_encode(importance,og_df)
