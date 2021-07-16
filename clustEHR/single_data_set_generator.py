@@ -143,7 +143,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         seed_range = [di_set_up.loc[0,'seed'], di_set_up.loc[0,'seed'] + di_set_up.loc[0,'count']]
         return(seed_range)
 
-    seed_ranges = {i:get_seed(i) for i in clusters}
+    seed_ranges = {i:str(get_seed(i)) for i in clusters}
 
     setup_dict = {'pats':n,
                   'diseases': clusters,
@@ -176,6 +176,15 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     return(df_fin)
 
 
+if __name__ == '__main__':
+
+    for i in setup_dict.keys():
+        dict2 = {k:v for k,v in setup_dict.items() if k != i}
+        try:
+            with open('test/' + i +'.json','w') as f:
+                json.dump(dict2,f)
+        except:
+            print(i)
 
 
 
