@@ -39,9 +39,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                    'gout',
                    'hypothyroidism',
                    'lung_cancer',
-                   'lupus',
                    'osteoarthritis',
-                   'osteoporosis',
                    'rheumatoid_arthritis',
                    'urinary_tract_infections']
     desc_true_list = ['asthma',
@@ -158,7 +156,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     folder_name = ('output'
                    + ''.join([str(i) for i in clusters])
                    + '_'
-                   + str(dt.datetime.now().date())
+                   + date1
                    + '_'
                    + time)
 

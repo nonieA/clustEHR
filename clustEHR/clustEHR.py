@@ -31,7 +31,7 @@ def sort_noise(noise_list,sets):
             'noise':{
                 j:1 for j in first_noise['feature'].keys()
             }
-        } for i in range(len(rat_dict['binary_rat']))]
+        } for i in range(len(rat_dict['binary']))]
 
         return final_dict
     else:
@@ -43,18 +43,22 @@ def sort_noise(noise_list,sets):
 
         final_dict = [{
             j:{k:rat_dict[j][k][i] for k in first_noise[j].keys()} for j in first_noise.keys()
-        } for i in range(len(rat_dict['feature']))]
+        } for i in range(sets)]
 
         return final_dict
 
 def sort_noise_full(noise_list,sets):
     if isinstance(noise_list,list) == False:
-        noise_list = [noise_list for i in range(sets)]
+        print(1)
+        noise_list2 = [noise_list for i in range(sets)]
     elif len(noise_list) == 2:
-        noise_list = sort_noise(noise_list,sets)
-    elif len(noise_list) != sets:
-        noise_list = [noise_list[0] for i in range(sets)]
-    return [get_noise(i) for i in noise_list]
+        print(2)
+        noise_list2 = sort_noise(noise_list,sets)
+    elif (len(noise_list) != sets) and (noise_list !=2):
+        noise_list2 = [noise_list[0] for i in range(sets)]
+    else:
+        noise_list2 = noise_list
+    return [get_noise(i) for i in noise_list2]
 
 def sort_config_list(conf_list,sets):
     if isinstance(conf_list,list) == False:
@@ -107,3 +111,4 @@ if __name__ == '__main__':
             dict_list.append(new_dict)
 
     df_list = [clustEHR(i) for i in dict_list]
+    config_file = dict_list[0]
