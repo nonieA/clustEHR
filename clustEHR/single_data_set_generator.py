@@ -47,8 +47,6 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                    'dementia',
                    'dermatitis',
                    'osteoarthritis',
-                   'osteoporosis',
-                   'rheumatoid_arthritis',
                    'urinary_tract_infections']
     # sorting life out if statements
     random.seed(seed)
@@ -100,8 +98,10 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                          write_out = (out_folder + file_name + '/'))
         dg._remove_files(out_file + file_name + '/')
         return(df)
-
-    full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file) for i in range(len(n))]
+    if description:
+        full_list = [one_dis(n, clusters[i], seed, description, out_folder=out_file) for i in range(len(clusters))]
+    else:
+        full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file) for i in range(len(clusters))]
     disease_list = [i[0] for i in full_list]
     col_dict_list = [i[1] for i in full_list]
 

@@ -49,10 +49,8 @@ def sort_noise(noise_list,sets):
 
 def sort_noise_full(noise_list,sets):
     if isinstance(noise_list,list) == False:
-        print(1)
         noise_list2 = [noise_list for i in range(sets)]
     elif len(noise_list) == 2:
-        print(2)
         noise_list2 = sort_noise(noise_list,sets)
     elif (len(noise_list) != sets) and (noise_list !=2):
         noise_list2 = [noise_list[0] for i in range(sets)]
@@ -98,7 +96,7 @@ def clustEHR(config_file):
         var_n= config_two['var_n'][i],
         description= config_two['description'][i],
         priority = config_two['priority'][i],
-        out_file = config_two['out_file'][i] )   for i in range(config_file['data_sets'])]
+        out_file = config_two['out_file'][i] ) for i in range(config_file['data_sets'])]
     return df
 
 if __name__ == '__main__':
@@ -111,4 +109,4 @@ if __name__ == '__main__':
             dict_list.append(new_dict)
 
     df_list = [clustEHR(i) for i in dict_list]
-    config_file = dict_list[0]
+    config_file = dict_list[3]

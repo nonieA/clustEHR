@@ -2,6 +2,7 @@
 Functions for generating and cleaning synthea data for one disease
 """
 import json
+import random
 
 import pandas as pd
 import numpy as np
@@ -213,7 +214,11 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
      }
 
     condits = conditions[disease]
-
+    if isinstance(n,list):
+        if len(n) < len(condits):
+            n = n +[random.randint(min(n),max(n)) for i in range(len(condits)-len(n))]
+        elif len(n) > len(condits):
+            n = n[:len(condits)]
     seed_str = str(seed)
     p = "2000"
     conf = "clustEHR\synthea_config.txt"
