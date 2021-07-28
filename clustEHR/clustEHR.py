@@ -4,6 +4,8 @@ import os
 from clustEHR.single_data_set_generator import generate_data
 import pandas as pd
 import numpy as np
+import re
+import random
 
 def get_noise(noise_dict):
     noise = [list(v.values()) for v in noise_dict.values()]
@@ -100,13 +102,49 @@ def clustEHR(config_file):
     return df
 
 if __name__ == '__main__':
-    file_list = os.listdir('test')
-    dict_list = []
+#    file_list = os.listdir('test')
+#    file_list = [i for i in file_list if 'true.json' in i]
+#    dict_list = []
+
+#    for i in file_list:
+#        with open('test/' +i) as f:
+#            new_dict = json.load(f)
+#            dict_list.append(new_dict)
+
+#    df_list = [clustEHR(i) for i in dict_list]
+
+    file_list = os.listdir('mc_hammer_test')
+    no_noise_dict = {}
+    normal_dict = {}
 
     for i in file_list:
-        with open('test/' +i) as f:
+        with open('mc_hammer_test/' +i) as f:
             new_dict = json.load(f)
-            dict_list.append(new_dict)
+            name = re.sub('\.json','',i)
+            if 'no_noise' in i:
+                no_noise_dict[name] = new_dict
+            else:
+                normal_dict[name] = new_dict
 
-    df_list = [clustEHR(i) for i in dict_list]
-    config_file = dict_list[3]
+    no_noise_2 = {k + '_2':v for k,v in no_noise_dict.items()}
+    for k,v in no_noise_2.items():
+        no_noise_2[k]['seed'] = [6,9]
+
+    normal_8 = {k + '_xl':v for k,v in normal_dict.items()}
+    for k,v in normal_8.items():
+        normal_8[k]['clusters'] = [6,9]
+        if 'unequal' not in k:
+            normal_8[k]['n'] = [[random.randint(100, 400) for i in range(j)] for j in range(6, 10)]
+
+    normal_dict2 = {**normal_dict,**normal_8}
+    normal_dict2 = {k + '_2':v for k,v in normal_dict2.items()}
+    for k,v in normal_dict2.items():
+        normal_dict2[k]['seed'] = [6,9]
+
+    full_dict = {**no_noise_dict,**no_noise_2,**normal_dict,**normal_8,**normal_dict2}
+    for k,v in full_dict.items():
+        full_dict[k]['out_file'] = 'mc_hammer_test/' + k
+
+    for k,v in full_dict.items():
+        with open('mc_hammer_test/full_configs/' + k +'.json','w') as f:
+            json.dump(v,f)
