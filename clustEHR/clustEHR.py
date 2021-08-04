@@ -79,7 +79,7 @@ def clean_config(config_file):
     new_dict = {k:sort_config_list(v,sets) for k,v in config_file.items() if k not in ['data_sets','noise_var_ratio']}
     new_dict['noise_var_ratio'] = sort_noise_full(config_file['noise_var_ratio'],sets)
     new_dict['clusters'] = [int(i) for i in new_dict['clusters'] if isinstance(i,float)]
-    new_dict['seed'] = [int(i) for i in new_dict['seed'] if isinstance(i, float)]
+    new_dict['seed'] = [int(i) for i in new_dict['seed'] if isinstance(i, (float,int))]
     return new_dict
 
 
@@ -113,38 +113,82 @@ if __name__ == '__main__':
 
 #    df_list = [clustEHR(i) for i in dict_list]
 
-    file_list = os.listdir('mc_hammer_test')
-    no_noise_dict = {}
-    normal_dict = {}
+    # file_list = os.listdir('mc_hammer_test')
+    # no_noise_dict = {}
+    # normal_dict = {}
+    #
+    # for i in file_list:
+    #     with open('mc_hammer_test/' +i) as f:
+    #         new_dict = json.load(f)
+    #         name = re.sub('\.json','',i)
+    #         if 'no_noise' in i:
+    #             no_noise_dict[name] = new_dict
+    #         else:
+    #             normal_dict[name] = new_dict
+    #
+    # no_noise_2 = {k + '_2':v for k,v in no_noise_dict.items()}
+    # for k,v in no_noise_2.items():
+    #     no_noise_2[k]['seed'] = [6,9]
+    #
+    # normal_8 = {k + '_xl':v for k,v in normal_dict.items()}
+    # for k,v in normal_8.items():
+    #     normal_8[k]['clusters'] = [6,9]
+    #     if 'unequal' not in k:
+    #         normal_8[k]['n'] = [[random.randint(100, 400) for i in range(j)] for j in range(6, 10)]
+    #
+    # normal_dict2 = {**normal_dict,**normal_8}
+    # normal_dict2 = {k + '_2':v for k,v in normal_dict2.items()}
+    # for k,v in normal_dict2.items():
+    #     normal_dict2[k]['seed'] = [6,9]
+    #
+    # full_dict = {**no_noise_dict,**no_noise_2,**normal_dict,**normal_8,**normal_dict2}
+    # for k,v in full_dict.items():
+    #     full_dict[k]['out_file'] = 'mc_hammer_test/' + k
+    #
+    # for k,v in full_dict.items():
+    #     with open('mc_hammer_test/full_configs/' + k +'.json','w') as f:
+    #         json.dump(v,f)
 
-    for i in file_list:
-        with open('mc_hammer_test/' +i) as f:
-            new_dict = json.load(f)
-            name = re.sub('\.json','',i)
-            if 'no_noise' in i:
-                no_noise_dict[name] = new_dict
-            else:
-                normal_dict[name] = new_dict
+    equalness = ['equal','unequal']
+    description = [True,False]
+    cluster_n = [2,3,4,5,6]
+    noise = [True,False]
+    no_noise_dict = [{"feature":{"binary":1,"continous":1},"noise":{"binary":0,"continous":0}},
+	{"feature":{"binary":1,"continous":4},"noise":{"binary":0,"continous":0}}]
+    noise_dict = [{"feature":{"binary":1,"continous":1},"noise":{"binary":1,"continous":1}},
+	{"feature":{"binary":12,"continous":12},"noise":{"binary":1,"continous":1}}]
 
-    no_noise_2 = {k + '_2':v for k,v in no_noise_dict.items()}
-    for k,v in no_noise_2.items():
-        no_noise_2[k]['seed'] = [6,9]
+    def key_name(equalness,description,cluster_n,noise):
+        if description:
+            desc = 'true'
+        else:
+            desc = 'false'
+        clust = str(cluster_n)
+        if noise:
+            no = 'noise'
+        else:
+            no = 'no_noise'
+        return equalness + '_' + desc + '_' + clust + '_' + no
 
-    normal_8 = {k + '_xl':v for k,v in normal_dict.items()}
-    for k,v in normal_8.items():
-        normal_8[k]['clusters'] = [6,9]
-        if 'unequal' not in k:
-            normal_8[k]['n'] = [[random.randint(100, 400) for i in range(j)] for j in range(6, 10)]
+    def clust_size(clust_n):
+        size_list = [[random.randint(50, 400) for j in range(clust_n)] for i in range(4)]
+        return size_list
 
-    normal_dict2 = {**normal_dict,**normal_8}
-    normal_dict2 = {k + '_2':v for k,v in normal_dict2.items()}
-    for k,v in normal_dict2.items():
-        normal_dict2[k]['seed'] = [6,9]
+    full_dict = {key_name(e,d,c,n):{
+        "data_sets":4,
+        "n":200 if e else clust_size(c),
+        "seed":[2,5],
+        "clusters":c,
+        "vars":None,
+        "noise_var_ratio":noise_dict if n else no_noise_dict,
+        "var_n":100,
+        "description":d,
+        "priority":"noise_var_ratio",
+        "out_file":"new_test/" + key_name(e,d,c,n)
+    }for e in equalness for c in cluster_n for d in description for n in noise}
 
-    full_dict = {**no_noise_dict,**no_noise_2,**normal_dict,**normal_8,**normal_dict2}
     for k,v in full_dict.items():
-        full_dict[k]['out_file'] = 'mc_hammer_test/' + k
+        with open('new_test/' + k + '.json','w') as f:
+            json.dump(k,f)
 
-    for k,v in full_dict.items():
-        with open('mc_hammer_test/full_configs/' + k +'.json','w') as f:
-            json.dump(v,f)
+    df_list = [clustEHR(v) for v in full_dict.values()]
