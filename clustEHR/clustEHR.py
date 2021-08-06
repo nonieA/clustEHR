@@ -78,7 +78,7 @@ def clean_config(config_file):
     sets = config_file['data_sets']
     new_dict = {k:sort_config_list(v,sets) for k,v in config_file.items() if k not in ['data_sets','noise_var_ratio']}
     new_dict['noise_var_ratio'] = sort_noise_full(config_file['noise_var_ratio'],sets)
-    new_dict['clusters'] = [int(i) for i in new_dict['clusters'] if isinstance(i,float)]
+    new_dict['clusters'] = [int(i) for i in new_dict['clusters'] if isinstance(i,(float,int))]
     new_dict['seed'] = [int(i) for i in new_dict['seed'] if isinstance(i, (float,int))]
     return new_dict
 
