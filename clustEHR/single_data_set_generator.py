@@ -101,7 +101,7 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
     if description:
         full_list = [one_dis(n, clusters[i], seed, description, out_folder=out_file,date1=date1) for i in range(len(clusters))]
     else:
-        full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file,date1date1) for i in range(len(clusters))]
+        full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file,date1=date1) for i in range(len(clusters))]
     disease_list = [i[0] for i in full_list]
     col_dict_list = [i[1] for i in full_list]
 
