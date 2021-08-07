@@ -12,7 +12,7 @@ import re
 import os
 import math
 
-def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
+def _disease_counter(n,disease,  seed, out_folder = os.getcwd(),date1):
     """
     Generates synthea data for a disease with n number of cases
     :param n: Number of disease cases
@@ -88,7 +88,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
                 '/' +
                 disease +
                 "_" +
-                str(dt.datetime.now().date()) +
+                date1) +
                 "_" +
                 seed_str
                 )
@@ -152,7 +152,7 @@ def _disease_counter(n,disease,  seed, out_folder = os.getcwd()):
     set_up.to_csv((file_out + "/setup.csv"))
 
 
-def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
+def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd(),date1):
     """
     Generates synthea data for a disease with n number of cases
     :param n: Number of disease cases
@@ -230,7 +230,7 @@ def _disease_counter_1d(n,disease,  seed, out_folder = os.getcwd()):
                 '/' +
                 disease +
                 "_" +
-                str(dt.datetime.now().date()) +
+                date1 +
                 "_" +
                 seed_str
                 )

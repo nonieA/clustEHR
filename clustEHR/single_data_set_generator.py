@@ -78,12 +78,12 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         out_file = out_file + '\\'
     # generate synthea data
     date1 = str(dt.datetime.now().date())
-    def one_dis(n, disease, seed, description, out_folder):
+    def one_dis(n, disease, seed, description, out_folder,date1):
         date = str(dt.datetime.now().date())
         if description == False:
-            dg._disease_counter(n,disease, seed, out_folder)
+            dg._disease_counter(n,disease, seed, out_folder,date1)
         else:
-            dg._disease_counter_1d(n, disease,seed, out_folder)
+            dg._disease_counter_1d(n, disease,seed, out_folder,date1)
         file_name = (disease +
                     "_" +
                     date +
@@ -99,9 +99,9 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
         dg._remove_files(out_file + file_name + '/')
         return(df)
     if description:
-        full_list = [one_dis(n, clusters[i], seed, description, out_folder=out_file) for i in range(len(clusters))]
+        full_list = [one_dis(n, clusters[i], seed, description, out_folder=out_file,date1=date1) for i in range(len(clusters))]
     else:
-        full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file) for i in range(len(clusters))]
+        full_list = [one_dis(n[i], clusters[i], seed, description, out_folder = out_file,date1date1) for i in range(len(clusters))]
     disease_list = [i[0] for i in full_list]
     col_dict_list = [i[1] for i in full_list]
 

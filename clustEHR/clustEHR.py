@@ -189,6 +189,8 @@ if __name__ == '__main__':
 
     for k,v in full_dict.items():
         with open('new_test/' + k + '.json','w') as f:
-            json.dump(k,f)
-
+            json.dump(v,f)
+    file_list = os.listdir('new_test/')
+    file_list = [i for i in file_list if '.json' not in i]
+    full_dict = {k:v for k,v in full_dict.items() if k not in file_list}
     df_list = [clustEHR(v) for v in full_dict.values()]
