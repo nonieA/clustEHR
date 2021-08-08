@@ -89,6 +89,9 @@ def clustEHR(config_file):
         os.mkdir(out_file)
     config_two = clean_config(config_file)
     config_two['out_file'] = [i + '/data_' + str(idx) for idx,i in enumerate(config_two['out_file'])]
+    for i in config_two['out_file']:
+        if os.path.isdir(i) == False:
+            os.mkdir(i)
     df = [generate_data(
         n = config_two['n'][i],
         seed = config_two['seed'][i],

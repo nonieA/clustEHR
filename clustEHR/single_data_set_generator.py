@@ -75,18 +75,17 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
 
 
     if not (out_file[-1] == '\\' or out_file[-1] == '/'):
-        out_file = out_file + '\\'
+        out_file = out_file + '/'
     # generate synthea data
     date1 = str(dt.datetime.now().date())
     def one_dis(n, disease, seed, description, out_folder,date1):
-        date = str(dt.datetime.now().date())
         if description == False:
-            dg._disease_counter(n,disease, seed, out_folder,date1)
+            dg._disease_counter(n,disease, seed, date1,out_folder)
         else:
-            dg._disease_counter_1d(n, disease,seed, out_folder,date1)
+            dg._disease_counter_1d(n, disease,seed, date1,out_folder)
         file_name = (disease +
                     "_" +
-                    date +
+                    date1 +
                     "_" +
                     str(seed)
                     )
