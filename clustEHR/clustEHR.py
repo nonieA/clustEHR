@@ -179,7 +179,7 @@ if __name__ == '__main__':
 
     full_dict = {key_name(e,d,c,n):{
         "data_sets":4,
-        "n":200 if e else clust_size(c),
+        "n":200 if e == 'equal' else clust_size(c),
         "seed":[2,5],
         "clusters":c,
         "vars":None,

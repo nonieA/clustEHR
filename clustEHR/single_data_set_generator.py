@@ -30,7 +30,6 @@ def generate_data(n, seed, clusters, vars, noise_var_ratio, var_n, description,
                    'bronchitis',
                    'colorectal_cancer',
                    'copd',
-                   'cystic_fibrosis',
                    'dementia',
                    'dermatitis',
                    'epilepsy',
@@ -184,14 +183,32 @@ if __name__ == '__main__':
             print(i)
 
 
+    test_df = pd.read_csv('test/outputcopddementiacolorectal_cancer_2021-08-16_21-17-18/cluster_data.csv').drop(columns =['Unnamed: 0','PATIENT'] )
+    labels_df = pd.read_csv('test/outputcopddementiacolorectal_cancer_2021-08-16_21-17-18/labels.csv').drop(
+        columns=['Unnamed: 0', 'PATIENT'])
+    test_df['DEATH_AGE'] = test_df['DEATH_AGE'].apply(pd.to_numeric, errors='coerce')
+    test_df['YEARS_TO_DEATH'] = test_df['YEARS_TO_DEATH'].apply(pd.to_numeric, errors='coerce')
+
+    def mean_col(col):
+        if list(col.unique().astype(int)) == [1,0]:
+            return str(round(sum(col)/len(col)*100)) + '%'
+        else:
+            return str(round(np.mean(col),2))
 
 
+    mean_df = pd.DataFrame(test_df.apply(mean_col))
+    labels = test_df
+    labels['labels'] = labels_df['DISEASE']
 
 
+    df_list = []
+    for i in labels['labels'].unique():
+        small_df = labels[labels['labels'] == i].drop(columns = ['labels'])
+        new_df = small_df.apply(mean_col)
+        mean_df[i] =new_df
 
-
-
-
+    mean2 = mean_df.copy()
+    mean2.to_csv('test/mean_df.csv')
 
 
 

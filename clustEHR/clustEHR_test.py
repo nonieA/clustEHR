@@ -16,11 +16,15 @@ def clustering(df,labels):
     right_list = []
     for i in range(k):
         right_list.append(np.max(conf))
-        max_ind = np.argmax(conf)
-        row_ind = int((max_ind +1)/k)
-        col_ind = max_ind - row_ind*k
+        max_ind =  np.where(conf == np.max(conf))
+        row_ind = max_ind[0][0]
+        col_ind = max_ind[1][0]
         conf[row_ind,:] = 0
         conf[:,col_ind] = 0
     return sum(right_list)/len(labels)
 
+
 if __name__ == '__main__':
+    df = pd.read_csv('new_test/equal_false_2_noise/data_0/outputasthmabreast_cancer_2021-08-05_14-39-35/cluster_data.csv')
+    labels_df = pd.read_csv('new_test/equal_false_2_noise/data_0/outputasthmabreast_cancer_2021-08-05_14-39-35/labels.csv')
+    labels = labels_df['code']
