@@ -210,12 +210,15 @@ if __name__ == '__main__':
     mean2 = mean_df.copy()
     mean2.to_csv('test/mean_df.csv')
 
+    var_df = pd.read_csv('test/outputcopddementiacolorectal_cancer_2021-08-16_21-17-18/varstypes.csv').drop(
+        columns=['Unnamed: 0'])
 
+    mean2 = mean2.reset_index()
+    mean2 = pd.merge(mean2,var_df[['vars','noise','type']],how='left',right_on='vars',left_on='index')
+    mean2.to_csv('test/paper.csv')
 
-
-
-
-
+    generate_data(200, 4, ['osteoarthritis', 'dementia', 'copd'],vars=None, noise_var_ratio=[[5, 5, 5], [1, 1, 1]], var_n=20,
+                  description=False, out_file='test_4')
 
 
 

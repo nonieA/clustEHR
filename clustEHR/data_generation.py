@@ -588,7 +588,7 @@ def full_out(disease, df_list, description = False, write_out = False):
 
         df_last = pd.merge(df_last, df_first, how='outer', on=['PATIENT', 'DESCRIPTION_x'])
         df_last['RATE'] = _year_dif(df_last.DATE_x, df_last.DATE_y)
-        df_last['RATE'] = df_last.apply(lambda x: x.VALUE_x - x.VALUE_y / x.RATE if x.RATE != 0 else math.nan, axis=1)
+        df_last['RATE'] = df_last.apply(lambda x: (x.VALUE_x - x.VALUE_y) / x.RATE if x.RATE != 0 else math.nan, axis=1)
 
         df_first = (df_first[['PATIENT', 'DESCRIPTION_x', 'VALUE']]
                     .pivot(index='PATIENT', columns='DESCRIPTION_x', values='VALUE')
@@ -686,7 +686,7 @@ def _remove_files(path):
 if __name__ =='__main__':
     _disease_counter(200,'dementia',4,'trial_data')
     _disease_counter(200,'colorectal_cancer',4,'trial_data')
-    _disease_counter_1d(50,'copd',3,'trial_data')
+    _disease_counter_1d(50,'copd',3,'test_3')
     conf = "clustEHR\\synthea_config.txt"
 
 
@@ -716,3 +716,6 @@ if __name__ =='__main__':
     df, col_dict = full_out('copd',df_list,description=True)
     df_list = [df]
     col_dict_list = [col_dict]
+    _disease_counter(50, 'copd',4,'17/02', 'test3')
+    df_list = _read_files('/02_4', 200, out_file='test3copd_17')
+    full_out('copd', df_list, description=False, write_out='test3copd_17')

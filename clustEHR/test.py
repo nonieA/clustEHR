@@ -151,3 +151,6 @@ def full_test(disease):
 test_results = {i: full_test(i) for i in module_list2}
 test_good = {k:v for k,v in test_results.items() if type(v) == pd.core.frame.DataFrame}
 test_bad = {k:v for k,v in test_results.items() if type(v) != pd.core.frame.DataFrame}
+
+
+
